@@ -159,42 +159,39 @@
 
     <section id="kamar" class="py-5" style="background-color: white;">
         <div class="container">
-            <h3 class="fw-bold mb-1" style="color: var(--primary-blue);">Pilihan Kamar Populer</h3>
-            <p class="text-muted mb-4">Direkomendasikan berdasarkan penilaian pelanggan.</p>
+            <h3 class="fw-bold mb-1" style="color: var(--primary-blue);">Destinasi Hotel Kami</h3>
+            <p class="text-muted mb-4">Pilih lokasi hotel untuk melihat tipe kamar yang tersedia.</p>
             
             <div class="row g-4">
-                @foreach($roomTypes as $room)
+                @foreach($hotels as $hotel)
                 <div class="col-lg-4 col-md-6">
                     <div class="card shadow-sm room-card h-100">
                         <div class="room-image-container">
-                            <img src="{{ Str::startsWith($room->foto_url, 'http') ? $room->foto_url : asset('storage/' . $room->foto_url) }}" class="card-img-top" alt="{{ $room->name }}" style="height: 220px; object-fit: cover;">
-                            <div class="room-badge"><i class="fa-solid fa-fire text-warning me-1"></i> Sering Dipesan</div>
+                            <img src="{{ Str::startsWith($hotel->foto_url, 'http') ? $hotel->foto_url : asset('storage/' . $hotel->foto_url) }}" class="card-img-top" alt="{{ $hotel->name }}" style="height: 220px; object-fit: cover;">
+                            <div class="room-badge"><i class="fa-solid fa-building text-warning me-1"></i> {{ $hotel->room_count }} Tipe Kamar</div>
                         </div>
                         <div class="card-body p-4 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h5 class="card-title fw-bold mb-0">{{ $room->name }}</h5>
+                                <h5 class="card-title fw-bold mb-0">{{ $hotel->name }}</h5>
                                 <div class="text-end">
-                                    <span class="badge bg-primary"><i class="fa-solid fa-star text-warning"></i> 4.8 / 5</span>
+                                    <span class="badge bg-primary"><i class="fa-solid fa-star text-warning"></i> 5.0 / 5</span>
                                 </div>
                             </div>
                             
                             <div class="mb-3">
-                                <span class="facility-icon"><i class="fa-solid fa-wifi"></i> WiFi</span>
-                                <span class="facility-icon"><i class="fa-solid fa-tv"></i> TV Kabel</span>
-                                <span class="facility-icon"><i class="fa-solid fa-wind"></i> AC</span>
+                                <span class="facility-icon"><i class="fa-solid fa-map-marker-alt"></i> Lokasi Strategis di {{ $hotel->location }}</span>
+                                <span class="facility-icon"><i class="fa-solid fa-swimming-pool"></i> Kolam Renang Umum</span>
                             </div>
                             
-                            <p class="card-text text-muted small flex-grow-1">{{ $room->description }}</p>
+                            <p class="card-text text-muted small flex-grow-1">Pengalaman menginap tak terlupakan. Fasilitas lengkap dan pelayanan bintang lima menanti Anda dan keluarga.</p>
                             
                             <div class="mt-auto border-top pt-3">
-                                <p class="text-success small fw-bold mb-1"><i class="fa-solid fa-check me-1"></i> Pembatalan Gratis</p>
                                 <div class="d-flex justify-content-between align-items-end">
                                     <div>
-                                        <div class="text-muted text-decoration-line-through small">Rp {{ number_format($room->price + 250000, 0, ',', '.') }}</div>
-                                        <div class="price-text">Rp {{ number_format($room->price, 0, ',', '.') }}</div>
-                                        <div class="text-muted" style="font-size: 11px;">Termasuk pajak & biaya</div>
+                                        <span class="d-block text-muted small">Mulai Dari</span>
+                                        <h4 class="text-success fw-bold mb-0">Rp {{ number_format($hotel->min_price, 0, ',', '.') }}</h4>
                                     </div>
-                                    <a href="/booking/{{ $room->id }}" class="btn fw-bold px-4 rounded" style="background-color: var(--light-blue); color: white;">Pilih</a>
+                                    <a href="{{ route('hotel.detail', urlencode($hotel->location)) }}" class="btn btn-primary d-flex align-items-center rounded-3 px-4"><i class="fa-solid fa-arrow-right me-2"></i>Pilih Kamar</a>
                                 </div>
                             </div>
                         </div>
