@@ -117,6 +117,35 @@ class DashboardController extends Controller
             return view('dashboard', compact('myBookings', 'myOrders'));
         }
     }
+    
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
+            'password' => 'nullable|string|min:6',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+        
+        if ($request->filled('password')) {
+            $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        }
+
+        if ($request->hasFile('foto')) {
+            if ($user->foto_profil) {
+                Storage::disk('public')->delete($user->foto_profil);
+            }
+            $user->foto_profil = $request->file('foto')->store('avatars', 'public');
+        }
+
+        $user->save();
+
+        return back()->with('success', 'Profil berhasil diperbarui!');
+    }
 
     // --- CRUD HOTEL CABANG (ADMIN) ---
     public function storeHotelBranch(Request $request) {
@@ -235,6 +264,12 @@ class DashboardController extends Controller
 
     // --- CRUD STOK KAMAR (INDIVIDUAL) ---
     public function storeSpecificRoom(Request $request) {
+        $request->validate([
+            'room_number' => 'required|unique:rooms,room_number'
+        ], [
+            'room_number.unique' => 'Gagal! Nomor kamar "' . $request->room_number . '" sudah terdaftar di sistem. Silakan gunakan nomor yang berbeda.'
+        ]);
+
         \App\Models\Room::create([
             'room_type_id' => $request->room_type_id,
             'room_number' => $request->room_number,
@@ -257,8 +292,25 @@ class DashboardController extends Controller
 
     // --- MANAJEMEN RESERVASI ---
     public function updateBookingStatus(Request $request, $id) {
-        $booking = \App\Models\Booking::with('payments', 'room')->findOrFail($id);
+        $booking = \App\Models\Booking::with('payments', 'room', 'guest')->findOrFail($id);
+        $user = Auth::user();
         $action = $request->action;
+
+        // Cek keamanan jika user bukan admin/owner
+        if ($user->role !== 'admin' && $user->role !== 'owner') {
+            // Hanya izinkan aksi cancel
+            if ($action !== 'cancel') {
+                abort(403, 'Anda tidak berhak mengubah status ini.');
+            }
+            // Pastikan pesanan miliknya
+            if (!$booking->guest || $booking->guest->email !== $user->email) {
+                abort(403, 'Unauthorized access.');
+            }
+            // Pastikan hanya bisa cancel jika masih pending
+            if ($booking->status !== 'pending' && $booking->payments->where('payment_status', 'paid')->count() > 0) {
+                return back()->with('error', 'Pesanan lunas tidak bisa dibatalkan secara otomatis.');
+            }
+        }
 
         if ($action == 'verify_payment') {
             // Ubah payment pertama menjadi paid
@@ -291,13 +343,37 @@ class DashboardController extends Controller
             return back()->with('success', 'Tamu Check-Out! Kamar berstatus Available kembali.');
         }
         elseif ($action == 'cancel') {
-            $booking->update(['status' => 'canceled']);
+            $booking->update(['status' => 'cancelled']);
             if($booking->room) {
                 $booking->room->update(['status' => 'available']);
             }
             return back()->with('success', 'Booking Dibatalkan.');
         }
 
+        return back();
+    }
+
+    public function updateRestaurantOrderStatus(Request $request, $id) {
+        $order = \App\Models\RestaurantOrder::with('payments', 'guest')->findOrFail($id);
+        $user = Auth::user();
+        $action = $request->action;
+
+        if ($user->role !== 'admin' && $user->role !== 'owner') {
+            if ($action !== 'cancel') {
+                abort(403, 'Anda tidak berhak mengubah status ini.');
+            }
+            if (!$order->guest || $order->guest->email !== $user->email) {
+                abort(403, 'Unauthorized access.');
+            }
+            if ($order->status !== 'ordered' && $order->payments->where('payment_status', 'paid')->count() > 0) {
+                return back()->with('error', 'Pesanan lunas tidak bisa dibatalkan secara otomatis.');
+            }
+        }
+        
+        if ($action == 'cancel') {
+            $order->update(['status' => 'cancelled']);
+            return back()->with('success', 'Pesanan Restoran Dibatalkan.');
+        }
         return back();
     }
 
@@ -312,5 +388,23 @@ class DashboardController extends Controller
     public function deleteUser($id) {
         \App\Models\User::findOrFail($id)->delete();
         return back()->with('success', 'User berhasil dihapus!');
+    }
+
+    // --- INVOICE PDF ---
+    public function downloadInvoice($id)
+    {
+        $user = Auth::user();
+        $booking = \App\Models\Booking::with(['room.roomType', 'guest', 'payments', 'restaurantOrder.details.menu'])->findOrFail($id);
+
+        // Security check: Only original guest or admin/owner can download
+        if ($user->role !== 'admin' && $user->role !== 'owner') {
+            if (!$booking->guest || $booking->guest->email !== $user->email) {
+                abort(403, 'Unauthorized access to this invoice.');
+            }
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('invoice', compact('booking'));
+        
+        return $pdf->download('Invoice_Hotelku_' . $booking->id . '.pdf');
     }
 }

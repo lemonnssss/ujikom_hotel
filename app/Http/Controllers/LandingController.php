@@ -40,6 +40,49 @@ class LandingController extends Controller
         return view('welcome', compact('hotels', 'menus', 'roomTypes'));
     }
 
+    public function search(Request $request)
+    {
+        $request->validate([
+            'check_in' => 'required|date|after_or_equal:today',
+            'check_out' => 'required|date|after:check_in',
+            'location' => 'nullable|string'
+        ]);
+
+        $checkIn = Carbon::parse($request->check_in)->startOfDay();
+        $checkOut = Carbon::parse($request->check_out)->startOfDay();
+        $location = $request->location;
+
+        $roomTypesQuery = RoomType::query();
+
+        if ($location) {
+            if ($location == 'Pusat') {
+                $roomTypesQuery->where(function($q) {
+                    $q->whereNull('location')->orWhere('location', '');
+                });
+            } else {
+                $roomTypesQuery->where('location', $location);
+            }
+        }
+
+        // Filter RoomType that has AT LEAST ONE room available in the given date range
+        $availableRoomTypes = $roomTypesQuery->whereHas('rooms', function($query) use ($checkIn, $checkOut) {
+            $query->where('status', '!=', 'maintenance')
+                  ->whereDoesntHave('bookings', function($bQuery) use ($checkIn, $checkOut) {
+                      $bQuery->whereIn('status', ['pending', 'confirmed', 'checked_in'])
+                             ->where(function ($subQuery) use ($checkIn, $checkOut) {
+                                 $subQuery->whereBetween('check_in', [$checkIn, $checkOut])
+                                          ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                                          ->orWhere(function ($q) use ($checkIn, $checkOut) {
+                                              $q->where('check_in', '<=', $checkIn)
+                                                ->where('check_out', '>=', $checkOut);
+                                          });
+                             });
+                  });
+        })->get();
+
+        return view('search-results', compact('availableRoomTypes', 'checkIn', 'checkOut', 'location'));
+    }
+
     public function hotelDetail($location)
     {
         $actualLocation = $location == 'Pusat' ? null : urldecode($location);
@@ -62,7 +105,6 @@ class LandingController extends Controller
     {
         $roomType = RoomType::findOrFail($id);
         
-        // Simulasikan penghitungan ketersediaan jika ingin ditampilkan
         $availableRooms = Room::where('room_type_id', $roomType->id)
                               ->where('status', 'available')
                               ->count();
@@ -70,11 +112,34 @@ class LandingController extends Controller
         return view('room-detail', compact('roomType', 'availableRooms'));
     }
 
-    // Fungsi baru untuk halaman form booking
-    public function bookingForm($id)
+    public function checkVoucher(Request $request)
+    {
+        $code = $request->code;
+        $voucher = \App\Models\Voucher::where('code', $code)->where('is_active', true)->first();
+
+        if (!$voucher) {
+            return response()->json(['success' => false, 'message' => 'Voucher tidak ditemukan atau tidak berlaku.']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'voucher' => [
+                'id' => $voucher->id,
+                'code' => $voucher->code,
+                'type' => $voucher->type,
+                'value' => $voucher->value
+            ],
+            'message' => 'Voucher berhasil diterapkan!'
+        ]);
+    }
+
+    public function bookingForm(Request $request, $id)
     {
         $roomType = RoomType::findOrFail($id);
-        return view('booking', compact('roomType'));
+        $checkIn = $request->query('check_in');
+        $checkOut = $request->query('check_out');
+        $menus = RestaurantMenu::all();
+        return view('booking', compact('roomType', 'checkIn', 'checkOut', 'menus'));
     }
 
     // Fungsi untuk memproses data booking
@@ -88,6 +153,9 @@ class LandingController extends Controller
             'address' => 'required|string|max:255',
             'check_in' => 'required|date',
             'check_out' => 'required|date|after:check_in',
+            'menus' => 'nullable|array',
+            'menus.*.qty' => 'nullable|integer|min:0',
+            'menus.*.id' => 'nullable|integer|exists:restaurant_menus,id',
         ]);
 
         $roomType = RoomType::findOrFail($id);
@@ -136,7 +204,28 @@ class LandingController extends Controller
         // Hitung total harga
         $days = $checkIn->diffInDays($checkOut);
         $days = $days == 0 ? 1 : $days; // Minimal 1 hari
-        $totalPrice = $days * $roomType->price;
+        $roomPriceOrigin = $days * $roomType->price;
+        $totalPrice = $roomPriceOrigin;
+        
+        $discountAmount = 0;
+        $voucherId = null;
+
+        if ($request->filled('voucher_code')) {
+            $voucher = \App\Models\Voucher::where('code', $request->voucher_code)->where('is_active', true)->first();
+            if ($voucher) {
+                $voucherId = $voucher->id;
+                if ($voucher->type === 'percent') {
+                     $discountAmount = $roomPriceOrigin * ($voucher->value / 100);
+                } else {
+                     $discountAmount = $voucher->value;
+                }
+                
+                if ($discountAmount > $roomPriceOrigin) {
+                    $discountAmount = $roomPriceOrigin;
+                }
+                $totalPrice -= $discountAmount;
+            }
+        }
 
         // Simpan booking
         $booking = Booking::create([
@@ -144,11 +233,50 @@ class LandingController extends Controller
             'room_id' => $room->id,
             'check_in' => $request->check_in,
             'check_out' => $request->check_out,
-            'total_price' => $totalPrice,
+            'total_price' => $totalPrice, // Sudah dipotong
+            'discount_amount' => $discountAmount,
+            'voucher_id' => $voucherId,
             'status' => 'pending',
         ]);
 
-        return redirect()->route('payment.form', ['type' => 'booking', 'id' => $booking->id])->with('success', 'Pemesanan kamar berhasil! Silakan lakukan pembayaran.');
+        // Proses Restaurant Order jika ada
+        if ($request->has('menus')) {
+            $orderTotal = 0;
+            $orderDetails = [];
+
+            foreach ($request->menus as $menuInput) {
+                if (!empty($menuInput['qty']) && $menuInput['qty'] > 0) {
+                    $menuItem = RestaurantMenu::find($menuInput['id']);
+                    if ($menuItem) {
+                        $qty = $menuInput['qty'];
+                        $price = $menuItem->price;
+                        $orderTotal += $qty * $price;
+                        
+                        $orderDetails[] = [
+                            'restaurant_menu_id' => $menuItem->id,
+                            'quantity' => $qty,
+                            'price' => $price,
+                        ];
+                    }
+                }
+            }
+
+            if ($orderTotal > 0) {
+                $restaurantOrder = RestaurantOrder::create([
+                    'guest_id' => $guest->id,
+                    'booking_id' => $booking->id,
+                    'total_price' => $orderTotal,
+                    'status' => 'ordered',
+                ]);
+
+                foreach ($orderDetails as $detail) {
+                    $detail['restaurant_order_id'] = $restaurantOrder->id;
+                    RestaurantOrderDetail::create($detail);
+                }
+            }
+        }
+
+        return redirect()->route('payment.form', ['type' => 'booking', 'id' => $booking->id])->with('success', 'Pemesanan kamar berhasil disiapkan! Silakan lakukan pembayaran.');
     }
 
     // Fungsi untuk form order restoran
@@ -209,8 +337,11 @@ class LandingController extends Controller
         $totalPrice = 0;
 
         if ($type === 'booking') {
-            $data = Booking::with('room.roomType')->findOrFail($id);
+            $data = Booking::with(['room.roomType', 'restaurantOrder'])->findOrFail($id);
             $totalPrice = $data->total_price;
+            if ($data->restaurantOrder) {
+                $totalPrice += $data->restaurantOrder->total_price;
+            }
         } elseif ($type === 'restaurant') {
             $data = RestaurantOrder::findOrFail($id);
             $totalPrice = $data->total_price;
@@ -221,40 +352,5 @@ class LandingController extends Controller
         return view('payment', compact('data', 'type', 'totalPrice'));
     }
 
-    // Fungsi proses bayar
-    public function paymentStore(Request $request)
-    {
-        $request->validate([
-            'type' => 'required|in:booking,restaurant',
-            'id' => 'required|integer',
-            'payment_method' => 'required|in:cash,transfer,credit_card,e_wallet',
-        ]);
-
-        $amount = 0;
-        $paymentData = [
-            'payment_method' => $request->payment_method,
-            'payment_status' => 'paid', // Sebagai simulasi langsung paid
-        ];
-
-        if ($request->type === 'booking') {
-            $booking = Booking::findOrFail($request->id);
-            $amount = $booking->total_price;
-            $paymentData['booking_id'] = $booking->id;
-            $paymentData['amount'] = $amount;
-            
-            \App\Models\Payment::create($paymentData);
-            $booking->update(['status' => 'confirmed']);
-
-        } elseif ($request->type === 'restaurant') {
-            $order = RestaurantOrder::findOrFail($request->id);
-            $amount = $order->total_price;
-            $paymentData['restaurant_order_id'] = $order->id;
-            $paymentData['amount'] = $amount;
-
-            \App\Models\Payment::create($paymentData);
-            $order->update(['status' => 'paid']);
-        }
-
-        return redirect('/')->with('success', 'Pembayaran berhasil dikonfirmasi! Terima kasih.');
-    }
+    // Fungsi proses bayar sekarang ditangani oleh MidtransController
 }

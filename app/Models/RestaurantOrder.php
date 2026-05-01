@@ -12,7 +12,15 @@ class RestaurantOrder extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function booking() {
+        return $this->belongsTo(Booking::class);
+    }
+
     public function details() {
         return $this->hasMany(RestaurantOrderDetail::class);
+    }
+
+    public function guest() {
+        return $this->belongsTo(Guest::class);
     }
 }

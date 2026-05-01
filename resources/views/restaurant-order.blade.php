@@ -3,192 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pesan Makanan - {{ $menu->name }}</title>
+    <meta name="description" content="Pesan {{ $menu->name }} dari restoran hotel kami langsung ke kamar Anda.">
+    <title>Pesan {{ $menu->name }} | Hotelku Restoran</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <style>
+        :root {
+            --navy: #0a1628;
+            --navy-light: #132240;
+            --accent-gold: #c9a84c;
+            --accent-gold-light: #e4cc7a;
+            --accent-orange: #ff8c42;
+            --accent-orange-dark: #e8590c;
+            --accent-blue: #4a7cff;
+            --accent-blue-glow: rgba(74, 124, 255, 0.25);
+            --warm-white: #faf9f6;
+            --text-secondary: #a0a8b8;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+            --transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--warm-white);
             min-height: 100vh;
         }
+
+        /* Navbar */
+        .navbar-premium {
+            background: rgba(10, 22, 40, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 14px 0;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+        }
+        .navbar-premium .navbar-brand {
+            font-size: 24px; font-weight: 800; color: white !important;
+        }
+        .navbar-premium .navbar-brand i { color: var(--accent-gold); }
+
+        /* Order Layout */
+        .order-section { padding: 40px 0 80px; }
+
         .order-card {
-            border: none;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.07);
             overflow: hidden;
-            background: #ffffff;
-            transition: transform 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.04);
         }
-        .order-card:hover {
-            transform: translateY(-5px);
-        }
-        .img-container {
+
+        .img-side {
             position: relative;
+            overflow: hidden;
             height: 100%;
-            min-height: 300px;
+            min-height: 520px;
         }
-        .img-container img {
-            object-fit: cover;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
+        .img-side img {
+            width: 100%; height: 100%;
+            object-fit: cover; position: absolute;
+            top: 0; left: 0;
+            transition: transform 8s ease;
         }
-        .price-badge {
-            background: linear-gradient(135deg, #fd7e14 0%, #e8590c 100%);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 50px;
+        .order-card:hover .img-side img {
+            transform: scale(1.05);
+        }
+        .img-overlay {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(10,22,40,0.7));
+            padding: 30px;
+        }
+        .img-overlay .menu-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255, 140, 66, 0.9);
+            color: white; padding: 6px 16px;
+            border-radius: 50px; font-size: 13px;
             font-weight: 700;
-            font-size: 1.1rem;
-            display: inline-block;
-            box-shadow: 0 4px 10px rgba(232, 89, 12, 0.3);
+        }
+
+        .form-side { padding: 40px; }
+
+        /* Menu Info Header */
+        .menu-name {
+            font-size: 28px; font-weight: 800;
+            color: var(--navy); margin-bottom: 8px;
+        }
+        .menu-desc {
+            font-size: 15px; color: var(--text-secondary);
+            line-height: 1.7; margin-bottom: 20px;
+        }
+        .price-badge-orange {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-orange-dark));
+            color: white; padding: 10px 24px;
+            border-radius: 50px; font-weight: 700;
+            font-size: 16px; margin-bottom: 28px;
+            box-shadow: 0 6px 20px rgba(255, 140, 66, 0.3);
+        }
+
+        /* Form Section */
+        .form-section-title {
+            font-size: 16px; font-weight: 700; color: var(--navy);
+            margin-bottom: 20px; padding-bottom: 12px;
+            border-bottom: 2px solid #f0f1f5;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .form-section-title i { color: var(--accent-orange); font-size: 18px; }
+
+        .form-label {
+            font-weight: 600; font-size: 13px;
+            color: #5a6577; margin-bottom: 8px;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
         .form-control {
-            border-radius: 10px;
-            padding: 10px 15px;
-            border: 1px solid #dee2e6;
-            background-color: #f8f9fa;
+            border: 2px solid #eef0f5;
+            border-radius: var(--radius-sm);
+            padding: 13px 15px;
+            font-weight: 500; font-size: 15px;
+            transition: var(--transition);
+            background: #f8f9fc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .form-control:focus {
-            box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.25);
-            border-color: #fd7e14;
-            background-color: #fff;
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 0 4px rgba(255, 140, 66, 0.15);
+            background: white;
         }
-        .btn-order-custom {
-            background: linear-gradient(135deg, #fd7e14 0%, #e8590c 100%);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 14px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            box-shadow: 0 8px 15px rgba(253, 126, 20, 0.3);
-            transition: all 0.3s ease;
+        .input-group-text {
+            background: #f8f9fc;
+            border: 2px solid #eef0f5;
+            border-right: none;
+            color: var(--accent-orange);
         }
-        .btn-order-custom:hover {
+        .input-group .form-control { border-left: none; }
+        .input-group:focus-within .input-group-text {
+            border-color: var(--accent-orange);
+        }
+
+        /* Buttons */
+        .btn-back {
+            background: white; color: #5a6577;
+            border: 2px solid #eef0f5;
+            padding: 15px 24px; border-radius: var(--radius-sm);
+            font-weight: 600; font-size: 15px;
+            transition: var(--transition);
+            text-decoration: none;
+            display: flex; align-items: center; gap: 8px; justify-content: center;
+        }
+        .btn-back:hover {
+            border-color: #d0d5dd; background: #f8f9fc; color: var(--navy);
+        }
+
+        .btn-order-submit {
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-orange-dark));
+            color: white; border: none;
+            padding: 15px 24px; border-radius: var(--radius-sm);
+            font-weight: 700; font-size: 15px;
+            transition: var(--transition);
+            display: flex; align-items: center; gap: 8px; justify-content: center;
+            box-shadow: 0 8px 25px rgba(255, 140, 66, 0.3);
+        }
+        .btn-order-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 20px rgba(253, 126, 20, 0.4);
+            box-shadow: 0 12px 30px rgba(255, 140, 66, 0.4);
             color: white;
         }
-        .form-label {
-            font-weight: 500;
-            color: #495057;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1.5px solid rgba(239, 68, 68, 0.2);
+            border-radius: var(--radius-md);
+            color: #dc2626; padding: 14px 20px;
+            font-weight: 500; font-size: 14px;
         }
-        .section-title {
-            position: relative;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            font-weight: 600;
-            color: #212529;
-            font-size: 1.1rem;
-        }
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 40px;
-            height: 3px;
-            background: #fd7e14;
-            border-radius: 2px;
+
+        @media (max-width: 767px) {
+            .img-side { min-height: 250px; }
+            .form-side { padding: 28px; }
         }
     </style>
 </head>
 <body>
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            
-            @if(session('error'))
-                <div class="alert alert-danger shadow-sm rounded border-0 border-start border-5 border-danger fade show mb-4">
-                    <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ session('error') }}
-                </div>
-            @endif
+<nav class="navbar navbar-premium sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fa-solid fa-hotel me-2"></i>Hotelku</a>
+    </div>
+</nav>
 
-            <div class="order-card">
-                <div class="row g-0">
-                    <div class="col-md-5 img-container d-none d-md-block">
-                        <img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}">
+<div class="order-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10" data-aos="fade-up">
+
+                @if(session('error'))
+                    <div class="alert-error mb-4">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>{{ session('error') }}
                     </div>
-                    
-                    <div class="col-md-7">
-                        <div class="p-4 p-md-5">
-                            
-                            <!-- Header Info -->
-                            <div class="mb-4">
-                                <h2 class="fw-bold text-dark mb-2">{{ $menu->name }}</h2>
-                                <p class="text-muted lh-base mb-3">{{ $menu->description }}</p>
-                                <div class="price-badge">
-                                    <i class="fa-solid fa-tag me-2"></i> Rp {{ number_format($menu->price, 0, ',', '.') }}
+                @endif
+
+                <div class="order-card">
+                    <div class="row g-0">
+                        <div class="col-md-5 d-none d-md-block">
+                            <div class="img-side">
+                                <img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}">
+                                <div class="img-overlay">
+                                    <div class="menu-badge"><i class="fa-solid fa-utensils"></i> Restoran Hotel</div>
                                 </div>
                             </div>
-                            
-                            <form action="{{ route('restaurant.store', $menu->id) }}" method="POST">
-                                @csrf 
-                                
-                                <h5 class="section-title"><i class="fa-solid fa-user me-2" style="color: #fd7e14;"></i> Informasi Pemesan</h5>
-                                <div class="mb-3">
-                                    <label class="form-label">Nama Lengkap</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light border-end-0"><i class="fa-regular fa-user text-muted"></i></span>
-                                        <input type="text" name="name" class="form-control border-start-0 ps-0" placeholder="Masukkan nama Anda" required>
-                                    </div>
-                                </div>
-                                <div class="row mb-4">
-                                    <div class="col-md-6 mb-3 mb-md-0">
-                                        <label class="form-label">Nomor WhatsApp</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light border-end-0"><i class="fa-brands fa-whatsapp text-muted"></i></span>
-                                            <input type="text" name="phone" class="form-control border-start-0 ps-0" placeholder="08xxxxxxxxxx" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">No. Kamar (Opsional)</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-door-closed text-muted"></i></span>
-                                            <input type="text" name="room_number" class="form-control border-start-0 ps-0" placeholder="Mis. 101">
-                                        </div>
-                                    </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="form-side">
+                                <h2 class="menu-name">{{ $menu->name }}</h2>
+                                <p class="menu-desc">{{ $menu->description }}</p>
+                                <div class="price-badge-orange">
+                                    <i class="fa-solid fa-tag"></i> Rp {{ number_format($menu->price, 0, ',', '.') }}
                                 </div>
 
-                                <h5 class="section-title mt-4"><i class="fa-solid fa-utensils me-2" style="color: #fd7e14;"></i> Detail Pesanan</h5>
-                                <div class="row mb-4 align-items-start">
-                                    <div class="col-md-4 mb-3 mb-md-0">
-                                        <label class="form-label">Jumlah Porsi</label>
-                                        <div class="input-group">
-                                            <input type="number" name="quantity" class="form-control" value="1" min="1" required>
-                                            <span class="input-group-text bg-light">Porsi</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-8">
-                                        <label class="form-label">Catatan Tambahan (Opsional)</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light border-end-0"><i class="fa-regular fa-comment-dots text-muted"></i></span>
-                                            <input type="text" name="note" class="form-control border-start-0 ps-0" placeholder="Mis. Pedas, tanpa daun bawang...">
-                                        </div>
-                                    </div>
-                                </div>
+                                <form action="{{ route('restaurant.store', $menu->id) }}" method="POST">
+                                    @csrf
 
-                                <div class="d-flex flex-column flex-md-row gap-3 mt-5">
-                                    <a href="/#restoran" class="btn btn-light py-3 px-4 rounded-3 text-secondary fw-semibold border w-100"><i class="fa-solid fa-arrow-left me-2"></i> Kembali</a>
-                                    <button type="submit" class="btn btn-order-custom w-100"><i class="fa-solid fa-cart-check me-2"></i> Pesan Sekarang</button>
-                                </div>
-                            </form>
+                                    <div class="form-section-title">
+                                        <i class="fa-solid fa-user"></i> Informasi Pemesan
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Nama Lengkap</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fa-regular fa-user"></i></span>
+                                            <input type="text" name="name" class="form-control" placeholder="Masukkan nama Anda" required>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-4">
+                                        <div class="col-md-6 mb-3 mb-md-0">
+                                            <label class="form-label">Nomor WhatsApp</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fa-brands fa-whatsapp"></i></span>
+                                                <input type="text" name="phone" class="form-control" placeholder="08xxxxxxxxxx" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">No. Kamar (Opsional)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fa-solid fa-door-closed"></i></span>
+                                                <input type="text" name="room_number" class="form-control" placeholder="Mis. 101">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-section-title mt-4">
+                                        <i class="fa-solid fa-utensils"></i> Detail Pesanan
+                                    </div>
+                                    <div class="row mb-4 align-items-start">
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <label class="form-label">Jumlah Porsi</label>
+                                            <div class="input-group">
+                                                <input type="number" name="quantity" class="form-control" value="1" min="1" required>
+                                                <span class="input-group-text" style="border-left: none; border-right: 2px solid #eef0f5;">Porsi</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label class="form-label">Catatan Tambahan (Opsional)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fa-regular fa-comment-dots"></i></span>
+                                                <input type="text" name="note" class="form-control" placeholder="Mis. Pedas, tanpa bawang...">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex flex-column flex-md-row gap-3 mt-5">
+                                        <a href="/#restoran" class="btn-back w-100"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
+                                        <button type="submit" class="btn-order-submit w-100">
+                                            <i class="fa-solid fa-cart-shopping"></i> Pesan Sekarang
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ once: true, duration: 700, easing: 'ease-out-cubic' });</script>
 </body>
 </html>
