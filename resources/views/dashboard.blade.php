@@ -184,6 +184,97 @@
             backdrop-filter: blur(10px);
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
+
+        /* Mobile toggle button */
+        .sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: #334155;
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .sidebar-toggle:hover {
+            background: #f1f5f9;
+        }
+
+        /* Sidebar overlay for mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            backdrop-filter: blur(2px);
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* Mobile Nav Menu Scrollable */
+        .nav-menu {
+            overflow-y: auto;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 1050;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-wrapper {
+                margin-left: 0;
+            }
+            .sidebar-toggle {
+                display: inline-flex;
+            }
+            .topbar {
+                padding: 0.75rem 1rem;
+            }
+            .content-area {
+                padding: 1rem;
+            }
+            .stat-card {
+                padding: 1.25rem;
+            }
+            .stat-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 1.2rem;
+            }
+            .stat-card h3 {
+                font-size: 1.25rem;
+            }
+            .table-custom th, .table-custom td {
+                padding: 0.75rem 1rem;
+                font-size: 0.8rem;
+            }
+            .card-custom .px-4 {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .topbar h5 {
+                font-size: 1rem;
+            }
+            .topbar .form-select {
+                min-width: 140px !important;
+                font-size: 0.8rem !important;
+            }
+            .stat-card h3 {
+                font-size: 1.1rem;
+            }
+            .stat-card p {
+                font-size: 0.65rem !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -200,12 +291,15 @@
         
         <div class="nav-menu" role="tablist">
             <p class="text-xs fw-bold text-uppercase mb-3 px-3" style="color: #64748b; letter-spacing: 1px;">Manajemen</p>
+            <button class="nav-item-btn active" data-bs-toggle="pill" data-bs-target="#tab-statistics">
+                <i class="fa-solid fa-chart-pie w-20px text-center"></i> Statistik & Laporan
+            </button>
             @if(Auth::user()->role == 'admin')
-            <button class="nav-item-btn active" data-bs-toggle="pill" data-bs-target="#tab-hotels-list">
+            <button class="nav-item-btn" data-bs-toggle="pill" data-bs-target="#tab-hotels-list">
                 <i class="fa-solid fa-building w-20px text-center"></i> Kelola Cabang Hotel
             </button>
             @endif
-            <button class="nav-item-btn {{ Auth::user()->role == 'owner' ? 'active' : '' }}" data-bs-toggle="pill" data-bs-target="#tab-hotel">
+            <button class="nav-item-btn" data-bs-toggle="pill" data-bs-target="#tab-hotel">
                 <i class="fa-solid fa-bed w-20px text-center"></i> Kamar & Lokasi
             </button>
             @if(Auth::user()->role == 'admin')
@@ -249,8 +343,14 @@
 
     <!-- MAIN WRAPPER -->
     <div class="main-wrapper">
+        <!-- Sidebar Overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
         <div class="topbar">
             <div class="d-flex align-items-center gap-3">
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
                 <h5 class="fw-bold mb-0 text-dark">Dasbor Admin</h5>
             </div>
             <div class="d-flex align-items-center gap-3">
@@ -305,68 +405,73 @@
                 </div>
             @endif
 
-            <!-- Stats Row -->
-            <div class="row g-4 mb-4 justify-content-center">
-                @if(Auth::user()->role == 'admin')
-                <div class="col-md-4">
-                    <div class="stat-card bg-primary shadow-sm">
-                        <div>
-                            <p class="text-white-50 small fw-bold mb-1">TOTAL PENDAPATAN</p>
-                            <h3 class="fw-bold mb-0">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h3>
-                        </div>
-                        <div class="stat-icon"><i class="fa-solid fa-wallet"></i></div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stat-card" style="background: #10b981; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);">
-                        <div>
-                            <p class="text-white-50 small fw-bold mb-1">TOTAL TRANSAKSI</p>
-                            <h3 class="fw-bold mb-0">{{ $totalBookings }}</h3>
-                        </div>
-                        <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
-                    </div>
-                </div>
-                @endif
-                <div class="col-md-4">
-                    <div class="stat-card" style="background: #f59e0b; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);">
-                        <div>
-                            <p class="text-white-50 small fw-bold mb-1">KAMAR TERISI</p>
-                            <h3 class="fw-bold mb-0">{{ $occupiedRoomsCount }}</h3>
-                        </div>
-                        <div class="stat-icon"><i class="fa-solid fa-bed"></i></div>
-                    </div>
-                </div>
-            </div>
 
-            @if(Auth::user()->role == 'admin')
-            <!-- Chart Row -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card-custom">
-                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
-                            <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-                                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded"><i class="fa-solid fa-chart-line"></i></div>
-                                Grafik Pendapatan {{ date('Y') }}
-                            </h6>
-                            <form action="{{ route('dashboard.reset_revenue') }}" method="POST" onsubmit="return confirm('Yakin ingin mereset semua pendapatan menjadi 0? Histori pembayaran akan dihapus namun histori booking tetap ada.');">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-rotate-left"></i> Reset Pendapatan</button>
-                            </form>
-                        </div>
-                        <div class="p-4">
-                            <canvas id="revenueChart" height="80"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endif
 
             <!-- TAB CONTENTS -->
             <div class="tab-content" id="pills-tabContent">
                 
+                <!-- TAB STATISTIK -->
+                <div class="tab-pane fade show active" id="tab-statistics">
+                    <!-- Stats Row -->
+                    <div class="row g-4 mb-4 justify-content-center">
+                        @if(Auth::user()->role == 'admin')
+                        <div class="col-md-4">
+                            <div class="stat-card bg-primary shadow-sm">
+                                <div>
+                                    <p class="text-white-50 small fw-bold mb-1">TOTAL PENDAPATAN</p>
+                                    <h3 class="fw-bold mb-0">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h3>
+                                </div>
+                                <div class="stat-icon"><i class="fa-solid fa-wallet"></i></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card" style="background: #10b981; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);">
+                                <div>
+                                    <p class="text-white-50 small fw-bold mb-1">TOTAL TRANSAKSI</p>
+                                    <h3 class="fw-bold mb-0">{{ $totalBookings }}</h3>
+                                </div>
+                                <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
+                            </div>
+                        </div>
+                        @endif
+                        <div class="col-md-4">
+                            <div class="stat-card" style="background: #f59e0b; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);">
+                                <div>
+                                    <p class="text-white-50 small fw-bold mb-1">KAMAR TERISI</p>
+                                    <h3 class="fw-bold mb-0">{{ $occupiedRoomsCount }}</h3>
+                                </div>
+                                <div class="stat-icon"><i class="fa-solid fa-bed"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if(Auth::user()->role == 'admin')
+                    <!-- Chart Row -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card-custom">
+                                <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
+                                    <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                        <div class="bg-primary bg-opacity-10 text-primary p-2 rounded"><i class="fa-solid fa-chart-line"></i></div>
+                                        Grafik Pendapatan {{ date('Y') }}
+                                    </h6>
+                                    <form action="{{ route('dashboard.reset_revenue') }}" method="POST" onsubmit="return confirm('Yakin ingin mereset semua pendapatan menjadi 0? Histori pembayaran akan dihapus namun histori booking tetap ada.');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-rotate-left"></i> Reset Pendapatan</button>
+                                    </form>
+                                </div>
+                                <div class="p-4">
+                                    <canvas id="revenueChart" height="80"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                
                 @if(Auth::user()->role == 'admin')
                 <!-- TAB HOTELS (ADMIN ONLY) -->
-                <div class="tab-pane fade show active" id="tab-hotels-list">
+                <div class="tab-pane fade" id="tab-hotels-list">
                     <div class="card-custom">
                         <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
                             <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
@@ -1299,6 +1404,33 @@
             });
         }
         @endif
+        // Sidebar toggle for mobile
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        if (sidebarToggle && sidebar) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+                if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+            });
+        }
+        if (sidebarOverlay && sidebar) {
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.remove('active');
+            });
+        }
+
+        // Close sidebar when a nav tab is clicked (mobile)
+        document.querySelectorAll('.nav-item-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (window.innerWidth < 992 && sidebar) {
+                    sidebar.classList.remove('show');
+                    if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                }
+            });
+        });
     });
 </script>
 </body>
