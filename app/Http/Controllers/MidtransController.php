@@ -35,16 +35,16 @@ class MidtransController extends Controller
         $customerDetails = [];
 
         if ($type === 'booking') {
-            $booking = Booking::with(['room.roomType', 'guest', 'restaurantOrder.details.menu'])->findOrFail($id);
+            $booking = Booking::with(['rooms.roomType', 'guest', 'restaurantOrder.details.menu'])->findOrFail($id);
             
             $roomPrice = $booking->total_price;
             $totalPrice = $roomPrice;
             
             $itemDetails[] = [
-                'id' => 'ROOM-' . $booking->room_id,
+                'id' => 'ROOM-' . ($booking->rooms->first()->id ?? $booking->id),
                 'price' => (int) $roomPrice,
                 'quantity' => 1,
-                'name' => substr(($booking->room->roomType->name ?? 'Kamar Hotel') . ' #' . $booking->room->room_number, 0, 50),
+                'name' => substr(($booking->room_qty . 'x ' . ($booking->rooms->first()->roomType->name ?? 'Kamar Hotel')), 0, 50),
             ];
 
             if ($booking->restaurantOrder) {

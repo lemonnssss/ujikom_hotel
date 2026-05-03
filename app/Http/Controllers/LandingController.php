@@ -153,6 +153,10 @@ class LandingController extends Controller
             'address' => 'required|string|max:255',
             'check_in' => 'required|date',
             'check_out' => 'required|date|after:check_in',
+            'room_qty' => 'required|integer|min:1|max:5',
+            'adults_count' => 'required|integer|min:1',
+            'children_count' => 'nullable|integer|min:0',
+            'special_requests' => 'nullable|string',
             'menus' => 'nullable|array',
             'menus.*.qty' => 'nullable|integer|min:0',
             'menus.*.id' => 'nullable|integer|exists:restaurant_menus,id',
@@ -164,7 +168,7 @@ class LandingController extends Controller
         $checkOut = Carbon::parse($request->check_out)->startOfDay();
 
         // Cari kamar kosong berdasar irisan tanggal (Overlap Checking)
-        $room = Room::where('room_type_id', $roomType->id)
+        $rooms = Room::where('room_type_id', $roomType->id)
                     ->where('status', '!=', 'maintenance')
                     ->whereDoesntHave('bookings', function($query) use ($checkIn, $checkOut) {
                         $query->whereIn('status', ['pending', 'confirmed', 'checked_in'])
@@ -176,10 +180,10 @@ class LandingController extends Controller
                                                  ->where('check_out', '>=', $checkOut);
                                            });
                               });
-                    })->first();
+                    })->limit($request->room_qty)->get();
 
-        if (!$room) {
-            return redirect()->back()->with('error', 'Maaf, tidak ada kamar tersedia pada tanggal tersebut untuk tipe ini.');
+        if ($rooms->count() < $request->room_qty) {
+            return redirect()->back()->with('error', 'Maaf, hanya tersedia ' . $rooms->count() . ' kamar pada tanggal tersebut untuk tipe ini.');
         }
 
         // Cari atau buat guest baru dari user yang login (karena sudah auth middleware)
@@ -204,7 +208,7 @@ class LandingController extends Controller
         // Hitung total harga
         $days = $checkIn->diffInDays($checkOut);
         $days = $days == 0 ? 1 : $days; // Minimal 1 hari
-        $roomPriceOrigin = $days * $roomType->price;
+        $roomPriceOrigin = $days * $roomType->price * $request->room_qty;
         $totalPrice = $roomPriceOrigin;
         
         $discountAmount = 0;
@@ -230,14 +234,20 @@ class LandingController extends Controller
         // Simpan booking
         $booking = Booking::create([
             'guest_id' => $guest->id,
-            'room_id' => $room->id,
             'check_in' => $request->check_in,
             'check_out' => $request->check_out,
+            'adults_count' => $request->adults_count,
+            'children_count' => $request->children_count ?? 0,
+            'room_qty' => $request->room_qty,
+            'special_requests' => $request->special_requests,
             'total_price' => $totalPrice, // Sudah dipotong
             'discount_amount' => $discountAmount,
             'voucher_id' => $voucherId,
             'status' => 'pending',
         ]);
+
+        // Attach rooms
+        $booking->rooms()->attach($rooms->pluck('id'));
 
         // Proses Restaurant Order jika ada
         if ($request->has('menus')) {
@@ -337,7 +347,7 @@ class LandingController extends Controller
         $totalPrice = 0;
 
         if ($type === 'booking') {
-            $data = Booking::with(['room.roomType', 'restaurantOrder'])->findOrFail($id);
+            $data = Booking::with(['rooms.roomType', 'restaurantOrder'])->findOrFail($id);
             $totalPrice = $data->total_price;
             if ($data->restaurantOrder) {
                 $totalPrice += $data->restaurantOrder->total_price;

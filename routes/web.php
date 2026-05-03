@@ -16,7 +16,17 @@ Route::get('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/login', [AuthController::class, 'loginPost']);
 Route::get('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/register', [AuthController::class, 'registerPost']);
+Route::get('/verify-otp', [AuthController::class, 'verifyOtp'])->name('verify.otp');
+Route::post('/verify-otp', [AuthController::class, 'verifyOtpPost']);
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Rute Lupa Password
+Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot.password');
+Route::post('/forgot-password', [AuthController::class, 'forgotPasswordPost']);
+Route::get('/verify-reset-otp', [AuthController::class, 'verifyResetOtp'])->name('verify.reset.otp');
+Route::post('/verify-reset-otp', [AuthController::class, 'verifyResetOtpPost']);
+Route::get('/reset-password', [AuthController::class, 'resetPassword'])->name('reset.password');
+Route::post('/reset-password', [AuthController::class, 'resetPasswordPost']);
 
 // Rute Authenticated (Fitur Pelanggan dan Dasbor)
 Route::middleware('auth')->group(function () {
@@ -64,10 +74,18 @@ Route::middleware('auth')->group(function () {
     // Status Pesanan Restoran
     Route::post('/dashboard/restaurant-order/{id}/status', [DashboardController::class, 'updateRestaurantOrderStatus']);
 
+    // Reset Pendapatan
+    Route::post('/dashboard/reset-revenue', [DashboardController::class, 'resetRevenue'])->name('dashboard.reset_revenue');
+
     // Restoran
     Route::post('/dashboard/menu', [DashboardController::class, 'storeMenu']);
     Route::post('/dashboard/menu/update/{id}', [DashboardController::class, 'updateMenu']);
     Route::get('/dashboard/menu/delete/{id}', [DashboardController::class, 'deleteMenu']);
+
+    // Kelola Voucher
+    Route::post('/dashboard/voucher', [DashboardController::class, 'storeVoucher']);
+    Route::post('/dashboard/voucher/update/{id}', [DashboardController::class, 'updateVoucher']);
+    Route::get('/dashboard/voucher/delete/{id}', [DashboardController::class, 'deleteVoucher']);
 });
 
 // Midtrans Webhook (tanpa auth & CSRF)

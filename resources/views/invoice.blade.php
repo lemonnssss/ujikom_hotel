@@ -185,15 +185,16 @@
                 $checkOut = \Carbon\Carbon::parse($booking->check_out);
                 $days = $checkIn->diffInDays($checkOut);
                 $days = $days == 0 ? 1 : $days;
-                $roomPrice = $booking->room->roomType->price ?? 0;
-                $roomTotal = $roomPrice * $days;
+                $roomQty = $booking->room_qty ?? 1;
+                $roomPrice = $booking->rooms->first()->roomType->price ?? 0;
+                $roomTotal = $roomPrice * $days * $roomQty;
             @endphp
             <tr>
                 <td>
-                    <strong>Kamar {{ $booking->room->roomType->name ?? 'Tipe Kamar' }}</strong> (No. {{ $booking->room->room_number ?? '-' }})<br>
+                    <strong>Kamar {{ $booking->rooms->first()->roomType->name ?? 'Tipe Kamar' }}</strong> ({{ $roomQty }} Kamar: No. {{ $booking->rooms->pluck('room_number')->implode(', ') }})<br>
                     <small>Check-in: {{ date('d M Y', strtotime($booking->check_in)) }} - Check-out: {{ date('d M Y', strtotime($booking->check_out)) }}</small>
                 </td>
-                <td class="text-center">{{ $days }} Malam</td>
+                <td class="text-center">{{ $days }} Malam x {{ $roomQty }} Kamar</td>
                 <td class="text-right">Rp {{ number_format($roomPrice, 0, ',', '.') }}</td>
                 <td class="text-right">Rp {{ number_format($roomTotal, 0, ',', '.') }}</td>
             </tr>

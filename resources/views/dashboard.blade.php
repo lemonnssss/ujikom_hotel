@@ -223,6 +223,9 @@
             <button class="nav-item-btn" data-bs-toggle="pill" data-bs-target="#tab-users">
                 <i class="fa-solid fa-users w-20px text-center"></i> Data Pengguna
             </button>
+            <button class="nav-item-btn" data-bs-toggle="pill" data-bs-target="#tab-vouchers">
+                <i class="fa-solid fa-ticket w-20px text-center"></i> Kelola Voucher
+            </button>
             @endif
             <button class="nav-item-btn" data-bs-toggle="pill" data-bs-target="#tab-profile">
                 <i class="fa-solid fa-user-circle w-20px text-center"></i> Profil Saya
@@ -334,6 +337,29 @@
                     </div>
                 </div>
             </div>
+
+            @if(Auth::user()->role == 'admin')
+            <!-- Chart Row -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card-custom">
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded"><i class="fa-solid fa-chart-line"></i></div>
+                                Grafik Pendapatan {{ date('Y') }}
+                            </h6>
+                            <form action="{{ route('dashboard.reset_revenue') }}" method="POST" onsubmit="return confirm('Yakin ingin mereset semua pendapatan menjadi 0? Histori pembayaran akan dihapus namun histori booking tetap ada.');">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-rotate-left"></i> Reset Pendapatan</button>
+                            </form>
+                        </div>
+                        <div class="p-4">
+                            <canvas id="revenueChart" height="80"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
 
             <!-- TAB CONTENTS -->
             <div class="tab-content" id="pills-tabContent">
@@ -591,8 +617,9 @@
                                             <div class="small text-muted">{{ $b->guest->email ?? '-' }}</div>
                                         </td>
                                         <td>
-                                            <div class="fw-semibold text-primary">{{ $b->room->roomType->name ?? '-' }} <span class="badge bg-secondary ms-1">No. {{ $b->room->room_number ?? '-' }}</span></div>
-                                            <div class="small text-muted">Cabang {{ $b->room->roomType->location ?? 'Pusat' }}</div>
+                                            <div class="fw-semibold text-primary">{{ $b->rooms->first()->roomType->name ?? '-' }} <span class="badge bg-secondary ms-1"> {{ $b->room_qty }} Kamar</span></div>
+                                            <div class="small text-muted mb-1">No: {{ $b->rooms->pluck('room_number')->implode(', ') }}</div>
+                                            <div class="small text-muted">Cabang {{ $b->rooms->first()->roomType->location ?? 'Pusat' }}</div>
                                             <div class="small text-muted mt-1"><i class="fa-regular fa-calendar me-1"></i> {{ \Carbon\Carbon::parse($b->check_in)->format('d M') }} - {{ \Carbon\Carbon::parse($b->check_out)->format('d M') }}</div>
                                         </td>
                                         <td class="fw-bold text-dark">Rp {{ number_format($b->total_price, 0, ',', '.') }}</td>
@@ -689,6 +716,56 @@
                     </div>
                 </div>
 
+                <!-- TAB VOUCHERS (ADMIN ONLY) -->
+                @if(Auth::user()->role == 'admin')
+                <div class="tab-pane fade" id="tab-vouchers">
+                    <div class="card-custom">
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded"><i class="fa-solid fa-ticket"></i></div>
+                                Daftar Voucher Diskon
+                            </h6>
+                            <button class="btn btn-primary fw-semibold d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#addVoucherModal">
+                                <i class="fa-solid fa-plus"></i> Tambah Voucher
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-custom table-hover">
+                                <thead><tr><th class="ps-4">Kode Voucher</th><th>Tipe & Nilai</th><th>Status</th><th class="text-end">Aksi</th></tr></thead>
+                                <tbody>
+                                    @foreach($vouchers as $v)
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-dark fs-5">{{ $v->code }}</td>
+                                        <td>
+                                            @if($v->type == 'percent')
+                                                <span class="fw-semibold text-primary">{{ rtrim(rtrim($v->value, '0'), '.') }}%</span>
+                                            @else
+                                                <span class="fw-semibold text-primary">Rp {{ number_format($v->value, 0, ',', '.') }}</span>
+                                            @endif
+                                            <div class="small text-muted text-uppercase">{{ $v->type }}</div>
+                                        </td>
+                                        <td>
+                                            @if($v->is_active)
+                                                <span class="badge badge-soft bg-success bg-opacity-10 text-success border border-success border-opacity-25">Aktif</span>
+                                            @else
+                                                <span class="badge badge-soft bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Nonaktif</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-flex justify-content-end gap-2">
+                                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editVoucher{{ $v->id }}"><i class="fa-solid fa-pen"></i></button>
+                                                <a href="/dashboard/voucher/delete/{{ $v->id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus voucher ini?')"><i class="fa-solid fa-trash"></i></a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!-- TAB PROFIL (Admin/Owner) -->
                 <div class="tab-pane fade" id="tab-profile">
                     <div class="card-custom">
@@ -783,6 +860,75 @@
                             @foreach($users->where('role', 'owner') as $o)
                                 <option value="{{ $o->id }}" {{ $htl->owner_id == $o->id ? 'selected' : '' }}>{{ $o->name }}</option>
                             @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-header border-top-0 pt-0 pb-4 px-4">
+                    <button class="btn btn-primary rounded-3 px-4 fw-bold shadow-sm w-100">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endforeach
+
+    <!-- Modal Tambah Voucher -->
+    <div class="modal fade" id="addVoucherModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form action="/dashboard/voucher" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+                @csrf
+                <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                    <h5 class="fw-bold"><i class="fa-solid fa-ticket text-primary me-2"></i>Tambah Voucher</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <div class="mb-3"><label class="small fw-semibold text-muted">Kode Voucher (Unik)</label><input type="text" name="code" class="form-control bg-light rounded-3 border-0 py-2 text-uppercase" required placeholder="Ex: DISKON10"></div>
+                    <div class="mb-3">
+                        <label class="small fw-semibold text-muted">Tipe Potongan</label>
+                        <select name="type" class="form-select bg-light rounded-3 border-0 py-2" required>
+                            <option value="fixed">Nominal Tetap (Rp)</option>
+                            <option value="percent">Persentase (%)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="small fw-semibold text-muted">Nilai Diskon (Angka Saja)</label><input type="number" name="value" class="form-control bg-light rounded-3 border-0 py-2" required placeholder="Ex: 50000 atau 10"></div>
+                    <div class="mb-3">
+                        <label class="small fw-semibold text-muted">Status</label>
+                        <select name="is_active" class="form-select bg-light rounded-3 border-0 py-2" required>
+                            <option value="1">Aktif</option>
+                            <option value="0">Nonaktif</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-header border-top-0 pt-0 pb-4 px-4">
+                    <button class="btn btn-primary rounded-3 px-4 fw-bold shadow-sm w-100">Simpan Voucher</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @foreach($vouchers ?? [] as $v)
+    <div class="modal fade" id="editVoucher{{ $v->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form action="/dashboard/voucher/update/{{ $v->id }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+                @csrf
+                <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                    <h5 class="fw-bold"><i class="fa-solid fa-pen text-primary me-2"></i>Ubah Voucher</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <div class="mb-3"><label class="small fw-semibold text-muted">Kode Voucher</label><input type="text" name="code" class="form-control bg-light rounded-3 border-0 py-2 text-uppercase" value="{{ $v->code }}" required></div>
+                    <div class="mb-3">
+                        <label class="small fw-semibold text-muted">Tipe Potongan</label>
+                        <select name="type" class="form-select bg-light rounded-3 border-0 py-2" required>
+                            <option value="fixed" {{ $v->type == 'fixed' ? 'selected' : '' }}>Nominal Tetap (Rp)</option>
+                            <option value="percent" {{ $v->type == 'percent' ? 'selected' : '' }}>Persentase (%)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="small fw-semibold text-muted">Nilai Diskon</label><input type="number" name="value" class="form-control bg-light rounded-3 border-0 py-2" value="{{ rtrim(rtrim($v->value, '0'), '.') }}" required></div>
+                    <div class="mb-3">
+                        <label class="small fw-semibold text-muted">Status</label>
+                        <select name="is_active" class="form-select bg-light rounded-3 border-0 py-2" required>
+                            <option value="1" {{ $v->is_active ? 'selected' : '' }}>Aktif</option>
+                            <option value="0" {{ !$v->is_active ? 'selected' : '' }}>Nonaktif</option>
                         </select>
                     </div>
                 </div>
@@ -1079,6 +1225,7 @@
 @endif
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const tabBtns = document.querySelectorAll('button[data-bs-toggle="pill"]');
@@ -1100,6 +1247,58 @@
                 tab.show();
             }
         }
+        
+        @if(Auth::user()->role == 'admin' && isset($chartLabels) && isset($chartData))
+        // Render Chart
+        const ctx = document.getElementById('revenueChart');
+        if(ctx) {
+            new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: {!! json_encode($chartLabels) !!},
+                    datasets: [{
+                        label: 'Total Pendapatan (Rp)',
+                        data: {!! json_encode($chartData) !!},
+                        borderColor: '#4a7cff',
+                        backgroundColor: 'rgba(74, 124, 255, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#4a7cff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let value = context.raw;
+                                    return 'Rp ' + value.toLocaleString('id-ID');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    if(value >= 1000000) return 'Rp ' + (value/1000000) + 'M';
+                                    if(value >= 1000) return 'Rp ' + (value/1000) + 'K';
+                                    return 'Rp ' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        @endif
     });
 </script>
 </body>

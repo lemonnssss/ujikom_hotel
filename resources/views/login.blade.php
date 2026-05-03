@@ -235,7 +235,7 @@
                             <input type="checkbox" class="form-check-input" id="remember">
                             <label class="form-check-label text-muted small" for="remember">Ingat Saya</label>
                         </div>
-                        <a href="/" class="link-home"><i class="fa-solid fa-arrow-left me-1"></i>Ke Beranda</a>
+                        <a href="/forgot-password" class="text-decoration-none small" style="color: var(--accent-blue); font-weight: 600;">Lupa Password?</a>
                     </div>
                     <button type="submit" class="btn-login-main mb-4">
                         <i class="fa-solid fa-right-to-bracket me-2"></i>Masuk
@@ -243,9 +243,10 @@
                 </form>
 
                 <div class="text-center">
-                    <p class="text-muted small mb-0">
+                    <p class="text-muted small mb-2">
                         Belum punya akun? <a href="/register" class="link-register">Daftar Sekarang</a>
                     </p>
+                    <a href="/" class="link-home"><i class="fa-solid fa-arrow-left me-1"></i>Ke Beranda</a>
                 </div>
             </div>
         </div>

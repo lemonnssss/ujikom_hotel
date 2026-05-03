@@ -350,6 +350,38 @@
                                 </div>
                             </div>
 
+                            <div class="row mb-4">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <label class="form-label">Jumlah Kamar</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-door-closed"></i></span>
+                                        <input type="number" name="room_qty" id="room_qty" class="form-control" value="1" min="1" max="5" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <label class="form-label">Tamu Dewasa</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                                        <input type="number" name="adults_count" class="form-control" value="1" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Anak-anak</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-child"></i></span>
+                                        <input type="number" name="children_count" class="form-control" value="0" min="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Permintaan Khusus (Opsional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-regular fa-comment-dots"></i></span>
+                                    <textarea name="special_requests" class="form-control" rows="2" placeholder="Contoh: Kamar berdekatan, lantai atas, dsb..."></textarea>
+                                </div>
+                            </div>
+
                             <!-- Restaurant Packages -->
                             <div class="form-section-title mt-5">
                                 <i class="fa-solid fa-utensils"></i> Paket Tambahan Restoran
@@ -424,6 +456,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const checkInInput = document.getElementById('check_in');
         const checkOutInput = document.getElementById('check_out');
+        const roomQtyInput = document.getElementById('room_qty');
         const pricePerNight = {{ $roomType->price }};
         const summaryContainer = document.getElementById('price-summary');
         const daysCountSpan = document.getElementById('days-count');
@@ -471,10 +504,11 @@
 
                 const diffTime = Math.abs(checkOutDate - checkInDate);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const roomQty = parseInt(roomQtyInput.value) || 1;
 
-                daysCountSpan.textContent = diffDays;
+                daysCountSpan.textContent = diffDays + " malam × " + roomQty + " kamar";
 
-                const roomTotalPrice = diffDays * pricePerNight;
+                const roomTotalPrice = diffDays * pricePerNight * roomQty;
                 
                 let restaurantTotal = 0;
                 document.querySelectorAll('.menu-qty').forEach(function(input) {
@@ -515,6 +549,8 @@
         });
 
         checkOutInput.addEventListener('change', calculateTotal);
+        roomQtyInput.addEventListener('change', calculateTotal);
+        roomQtyInput.addEventListener('input', calculateTotal);
 
         document.querySelectorAll('.menu-qty').forEach(function(input) {
             input.addEventListener('change', calculateTotal);

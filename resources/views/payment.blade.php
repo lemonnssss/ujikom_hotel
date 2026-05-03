@@ -297,7 +297,7 @@
                         @if($type === 'booking')
                         <div class="summary-row">
                             <span class="label">Kamar</span>
-                            <span class="value">{{ $data->room->roomType->name ?? 'Tipe Kamar' }} (No. {{ $data->room->room_number }})</span>
+                            <span class="value">{{ $data->rooms->first()->roomType->name ?? 'Tipe Kamar' }} ({{ $data->room_qty }} Kamar: No. {{ $data->rooms->pluck('room_number')->implode(', ') }})</span>
                         </div>
                         <div class="summary-row">
                             <span class="label">Check-in</span>

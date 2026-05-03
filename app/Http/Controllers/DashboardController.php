@@ -66,11 +66,30 @@ class DashboardController extends Controller
             // Statistik
             $totalRevenue = \App\Models\Payment::where('payment_status', 'paid')->sum('amount');
             
+            // Chart Data (Pendapatan per Bulan tahun ini)
+            $revenueData = \App\Models\Payment::select(
+                \DB::raw('MONTH(created_at) as month'), 
+                \DB::raw('SUM(amount) as total')
+            )->where('payment_status', 'paid')
+            ->whereYear('created_at', date('Y'))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+            $chartLabels = [];
+            $chartData = [];
+            $bulanIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            for ($i = 1; $i <= 12; $i++) {
+                $chartLabels[] = $bulanIndo[$i-1];
+                $monthData = $revenueData->firstWhere('month', $i);
+                $chartData[] = $monthData ? $monthData->total : 0;
+            }
+            
             $bookingsForStats = \App\Models\Booking::query();
             $roomsForStats = \App\Models\Room::where('status', 'occupied');
             
             if ($selectedHotel) {
-                $bookingsForStats->whereHas('room.roomType', function($q) use ($selectedHotel) {
+                $bookingsForStats->whereHas('rooms.roomType', function($q) use ($selectedHotel) {
                     if ($selectedHotel == 'Pusat') {
                         $q->whereNull('location')->orWhere('location', '');
                     } else {
@@ -91,9 +110,9 @@ class DashboardController extends Controller
             $occupiedRoomsCount = $roomsForStats->count();
 
             // Manajemen Reservasi
-            $bookingsQuery = \App\Models\Booking::with(['guest', 'room.roomType', 'payments'])->orderBy('check_in', 'desc');
+            $bookingsQuery = \App\Models\Booking::with(['guest', 'rooms.roomType', 'payments'])->orderBy('check_in', 'desc');
             if ($selectedHotel) {
-                $bookingsQuery->whereHas('room.roomType', function($q) use ($selectedHotel) {
+                $bookingsQuery->whereHas('rooms.roomType', function($q) use ($selectedHotel) {
                     if ($selectedHotel == 'Pusat') {
                         $q->whereNull('location')->orWhere('location', '');
                     } else {
@@ -103,14 +122,16 @@ class DashboardController extends Controller
             }
             $allBookings = $bookingsQuery->get();
 
-            return view('dashboard', compact('rooms', 'menus', 'allRooms', 'users', 'totalRevenue', 'totalBookings', 'occupiedRoomsCount', 'allBookings', 'hotelsList', 'selectedHotel', 'hotelsData'));
+            $vouchers = \App\Models\Voucher::orderBy('created_at', 'desc')->get();
+
+            return view('dashboard', compact('rooms', 'menus', 'allRooms', 'users', 'totalRevenue', 'totalBookings', 'occupiedRoomsCount', 'allBookings', 'hotelsList', 'selectedHotel', 'hotelsData', 'vouchers', 'chartLabels', 'chartData'));
         } else {
             $guest = \App\Models\Guest::where('email', $user->email)->first();
             $myBookings = collect();
             $myOrders = collect();
             
             if ($guest) {
-                $myBookings = \App\Models\Booking::with(['room.roomType', 'payments'])->where('guest_id', $guest->id)->orderBy('created_at', 'desc')->get();
+                $myBookings = \App\Models\Booking::with(['rooms.roomType', 'payments'])->where('guest_id', $guest->id)->orderBy('created_at', 'desc')->get();
                 $myOrders = \App\Models\RestaurantOrder::with(['details.menu', 'payments'])->where('guest_id', $guest->id)->orderBy('created_at', 'desc')->get();
             }
 
@@ -292,7 +313,7 @@ class DashboardController extends Controller
 
     // --- MANAJEMEN RESERVASI ---
     public function updateBookingStatus(Request $request, $id) {
-        $booking = \App\Models\Booking::with('payments', 'room', 'guest')->findOrFail($id);
+        $booking = \App\Models\Booking::with('payments', 'rooms', 'guest')->findOrFail($id);
         $user = Auth::user();
         $action = $request->action;
 
@@ -330,22 +351,22 @@ class DashboardController extends Controller
         } 
         elseif ($action == 'check_in') {
             $booking->update(['status' => 'checked_in']);
-            if($booking->room) {
-                $booking->room->update(['status' => 'occupied']);
+            foreach($booking->rooms as $rm) {
+                $rm->update(['status' => 'occupied']);
             }
             return back()->with('success', 'Tamu Check-In. Kamar berstatus Occupied.');
         } 
         elseif ($action == 'check_out') {
             $booking->update(['status' => 'checked_out']);
-            if($booking->room) {
-                $booking->room->update(['status' => 'available']);
+            foreach($booking->rooms as $rm) {
+                $rm->update(['status' => 'available']);
             }
             return back()->with('success', 'Tamu Check-Out! Kamar berstatus Available kembali.');
         }
         elseif ($action == 'cancel') {
             $booking->update(['status' => 'cancelled']);
-            if($booking->room) {
-                $booking->room->update(['status' => 'available']);
+            foreach($booking->rooms as $rm) {
+                $rm->update(['status' => 'available']);
             }
             return back()->with('success', 'Booking Dibatalkan.');
         }
@@ -394,7 +415,7 @@ class DashboardController extends Controller
     public function downloadInvoice($id)
     {
         $user = Auth::user();
-        $booking = \App\Models\Booking::with(['room.roomType', 'guest', 'payments', 'restaurantOrder.details.menu'])->findOrFail($id);
+        $booking = \App\Models\Booking::with(['rooms.roomType', 'guest', 'payments', 'restaurantOrder.details.menu'])->findOrFail($id);
 
         // Security check: Only original guest or admin/owner can download
         if ($user->role !== 'admin' && $user->role !== 'owner') {
@@ -406,5 +427,49 @@ class DashboardController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('invoice', compact('booking'));
         
         return $pdf->download('Invoice_Hotelku_' . $booking->id . '.pdf');
+    }
+
+    // --- CRUD VOUCHER ---
+    public function storeVoucher(Request $request) {
+        $request->validate([
+            'code' => 'required|string|unique:vouchers,code',
+            'type' => 'required|in:percent,fixed',
+            'value' => 'required|numeric|min:1',
+            'is_active' => 'required|boolean'
+        ]);
+
+        \App\Models\Voucher::create($request->only('code', 'type', 'value', 'is_active'));
+        return back()->with('success', 'Voucher berhasil ditambahkan!');
+    }
+
+    public function updateVoucher(Request $request, $id) {
+        $request->validate([
+            'code' => 'required|string|unique:vouchers,code,' . $id,
+            'type' => 'required|in:percent,fixed',
+            'value' => 'required|numeric|min:1',
+            'is_active' => 'required|boolean'
+        ]);
+
+        $voucher = \App\Models\Voucher::findOrFail($id);
+        $voucher->update($request->only('code', 'type', 'value', 'is_active'));
+        return back()->with('success', 'Data voucher diperbarui!');
+    }
+
+    public function deleteVoucher($id) {
+        \App\Models\Voucher::findOrFail($id)->delete();
+        return back()->with('success', 'Voucher berhasil dihapus!');
+    }
+
+    // --- RESET PENDAPATAN ---
+    public function resetRevenue() {
+        $user = Auth::user();
+        if ($user->role !== 'admin') {
+            abort(403, 'Hanya admin yang bisa mereset pendapatan.');
+        }
+
+        // Hapus semua data payment yang sudah paid
+        \App\Models\Payment::where('payment_status', 'paid')->delete();
+
+        return back()->with('success', 'Seluruh data pendapatan berhasil direset ke Rp 0. Histori booking tetap tersimpan.');
     }
 }
