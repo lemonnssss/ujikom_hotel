@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\RestaurantOrder;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class MidtransController extends Controller
 {
@@ -103,6 +104,9 @@ class MidtransController extends Controller
             ],
             'item_details' => $itemDetails,
             'customer_details' => $customerDetails,
+            'callbacks' => [
+                'finish' => route('payment.finish'),
+            ]
         ];
 
         try {
@@ -270,6 +274,21 @@ class MidtransController extends Controller
 
         // Fallback untuk Localhost (karena localhost tidak bisa terima Webhook otomatis)
         // Kita cek status langsung ke server Midtrans
+        if (!$orderId && Auth::check()) {
+            $user = Auth::user();
+            $guest = \App\Models\Guest::where('email', $user->email)->first();
+            if ($guest) {
+                $lastPayment = Payment::where(function($q) use ($guest) {
+                    $q->whereHas('booking', fn($sq) => $sq->where('guest_id', $guest->id))
+                      ->orWhereHas('restaurantOrder', fn($sq) => $sq->where('guest_id', $guest->id));
+                })->orderBy('created_at', 'desc')->first();
+                
+                if ($lastPayment) {
+                    $orderId = $lastPayment->midtrans_order_id;
+                }
+            }
+        }
+
         try {
             if ($orderId) {
                 // Konfigurasi Midtrans sudah diset di constructor
