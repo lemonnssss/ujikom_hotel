@@ -1175,8 +1175,8 @@
                                 @forelse($myBookings as $b)
                                 <tr>
                                     <td class="ps-4">
-                                        <div class="fw-bold text-dark">{{ $b->room->roomType->name ?? '-' }}</div>
-                                        <span class="badge bg-light border text-muted">Cabang {{ $b->room->roomType->location ?? 'Pusat' }} | No Kamar: {{ $b->room->room_number ?? 'Belum ditentukan' }}</span>
+                                        <div class="fw-bold text-dark">{{ $b->rooms->first()->roomType->name ?? '-' }}</div>
+                                        <span class="badge bg-light border text-muted">Cabang {{ $b->rooms->first()->roomType->location ?? 'Pusat' }} | No Kamar: {{ $b->rooms->pluck('room_number')->implode(', ') ?: 'Belum ditentukan' }}</span>
                                     </td>
                                     <td>
                                         <div class="fw-medium">{{ \Carbon\Carbon::parse($b->check_in)->format('d M Y') }}</div>
