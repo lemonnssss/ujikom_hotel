@@ -14,10 +14,10 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role == 'admin' || $user->role == 'owner') {
+        if ($user->role == 'admin' || $user->role == 'manager') {
             $hotelsData = \App\Models\Hotel::with('owner')->get();
             
-            if ($user->role == 'owner') {
+            if ($user->role == 'manager') {
                 $myHotel = \App\Models\Hotel::where('owner_id', $user->id)->first();
                 $selectedHotel = $myHotel ? $myHotel->location_key : 'UNASSIGNED_HOTEL_xxx';
                 $hotelsList = collect([$selectedHotel]);
@@ -317,8 +317,8 @@ class DashboardController extends Controller
         $user = Auth::user();
         $action = $request->action;
 
-        // Cek keamanan jika user bukan admin/owner
-        if ($user->role !== 'admin' && $user->role !== 'owner') {
+        // Cek keamanan jika user bukan admin/manager
+        if ($user->role !== 'admin' && $user->role !== 'manager') {
             // Hanya izinkan aksi cancel
             if ($action !== 'cancel') {
                 abort(403, 'Anda tidak berhak mengubah status ini.');
@@ -379,7 +379,7 @@ class DashboardController extends Controller
         $user = Auth::user();
         $action = $request->action;
 
-        if ($user->role !== 'admin' && $user->role !== 'owner') {
+        if ($user->role !== 'admin' && $user->role !== 'manager') {
             if ($action !== 'cancel') {
                 abort(403, 'Anda tidak berhak mengubah status ini.');
             }
@@ -417,8 +417,8 @@ class DashboardController extends Controller
         $user = Auth::user();
         $booking = \App\Models\Booking::with(['rooms.roomType', 'guest', 'payments', 'restaurantOrder.details.menu'])->findOrFail($id);
 
-        // Security check: Only original guest or admin/owner can download
-        if ($user->role !== 'admin' && $user->role !== 'owner') {
+        // Security check: Only original guest or admin/manager can download
+        if ($user->role !== 'admin' && $user->role !== 'manager') {
             if (!$booking->guest || $booking->guest->email !== $user->email) {
                 abort(403, 'Unauthorized access to this invoice.');
             }
@@ -471,5 +471,69 @@ class DashboardController extends Controller
         \App\Models\Payment::where('payment_status', 'paid')->delete();
 
         return back()->with('success', 'Seluruh data pendapatan berhasil direset ke Rp 0. Histori booking tetap tersimpan.');
+    }
+
+    // --- LAPORAN PDF ---
+    public function downloadReport() {
+        $user = Auth::user();
+        if ($user->role !== 'admin' && $user->role !== 'manager') {
+            abort(403, 'Unauthorized access to report.');
+        }
+
+        $selectedHotel = request('hotel');
+        
+        $bookingsForStats = \App\Models\Booking::query();
+        $roomsForStats = \App\Models\Room::where('status', 'occupied');
+        
+        if ($selectedHotel) {
+            $bookingsForStats->whereHas('rooms.roomType', function($q) use ($selectedHotel) {
+                if ($selectedHotel == 'Pusat') {
+                    $q->whereNull('location')->orWhere('location', '');
+                } else {
+                    $q->where('location', $selectedHotel);
+                }
+            });
+            
+            $roomsForStats->whereHas('roomType', function($q) use ($selectedHotel) {
+                if ($selectedHotel == 'Pusat') {
+                    $q->whereNull('location')->orWhere('location', '');
+                } else {
+                    $q->where('location', $selectedHotel);
+                }
+            });
+        }
+        
+        $totalBookings = $bookingsForStats->count();
+        $occupiedRoomsCount = $roomsForStats->count();
+        $totalRevenue = \App\Models\Payment::where('payment_status', 'paid')->sum('amount');
+
+        $revenueData = \App\Models\Payment::select(
+            \DB::raw('MONTH(created_at) as month'), 
+            \DB::raw('SUM(amount) as total')
+        )->where('payment_status', 'paid')
+        ->whereYear('created_at', date('Y'))
+        ->groupBy('month')
+        ->orderBy('month')
+        ->get();
+
+        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $chartData = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $monthData = $revenueData->firstWhere('month', $i);
+            $chartData[] = [
+                'month' => $bulanIndo[$i-1],
+                'total' => $monthData ? $monthData->total : 0
+            ];
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('report', compact(
+            'totalBookings', 
+            'occupiedRoomsCount', 
+            'totalRevenue',
+            'chartData',
+            'selectedHotel'
+        ));
+        
+        return $pdf->stream('Laporan_Statistik_Hotelku_' . date('Y-m-d') . '.pdf');
     }
 }

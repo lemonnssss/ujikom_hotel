@@ -12,7 +12,7 @@
 
     <style>
         /* ═══════════════════════════════════════════
-           DESIGN SYSTEM — Premium Hotel Theme
+           DESIGN SYSTEM — Hotelku Theme
         ═══════════════════════════════════════════ */
         :root {
             --navy: #0a1628;

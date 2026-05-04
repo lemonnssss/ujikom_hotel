@@ -211,7 +211,7 @@
                     <div class="row g-0">
                         <div class="col-md-5 d-none d-md-block">
                             <div class="img-side">
-                                <img src="{{ $menu->foto_url }}" alt="{{ $menu->name }}">
+                                <img src="{{ Str::startsWith($menu->foto_url, 'http') ? $menu->foto_url : asset('storage/' . $menu->foto_url) }}" alt="{{ $menu->name }}">
                                 <div class="img-overlay">
                                     <div class="menu-badge"><i class="fa-solid fa-utensils"></i> Restoran Hotel</div>
                                 </div>

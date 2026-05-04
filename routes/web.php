@@ -74,8 +74,9 @@ Route::middleware('auth')->group(function () {
     // Status Pesanan Restoran
     Route::post('/dashboard/restaurant-order/{id}/status', [DashboardController::class, 'updateRestaurantOrderStatus']);
 
-    // Reset Pendapatan
+    // Reset Pendapatan & Laporan
     Route::post('/dashboard/reset-revenue', [DashboardController::class, 'resetRevenue'])->name('dashboard.reset_revenue');
+    Route::get('/dashboard/report', [DashboardController::class, 'downloadReport'])->name('dashboard.report');
 
     // Restoran
     Route::post('/dashboard/menu', [DashboardController::class, 'storeMenu']);

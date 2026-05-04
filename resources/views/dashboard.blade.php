@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Premium Hotel</title>
+    <title>Dashboard - Hotelku</title>
     <!-- Fonts and Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -279,13 +279,13 @@
 </head>
 <body>
 
-@if(Auth::user()->role == 'admin' || Auth::user()->role == 'owner')
+@if(Auth::user()->role == 'admin' || Auth::user()->role == 'manager')
     <!-- ADMIN SIDEBAR -->
     <div class="sidebar shadow-lg">
         <div class="sidebar-header">
-            <a href="/" class="sidebar-brand">
-                <i class="fa-solid fa-hotel text-primary"></i>
-                <span>Premium Hotel</span>
+            <a href="/" class="sidebar-brand text-decoration-none">
+                <i class="fa-solid fa-hotel text-primary fs-3"></i>
+                <span class="fs-4 fw-bolder text-white">Hotelku</span>
             </a>
         </div>
         
@@ -321,22 +321,20 @@
                 <i class="fa-solid fa-ticket w-20px text-center"></i> Kelola Voucher
             </button>
             @endif
-            <button class="nav-item-btn" data-bs-toggle="pill" data-bs-target="#tab-profile">
-                <i class="fa-solid fa-user-circle w-20px text-center"></i> Profil Saya
-            </button>
         </div>
         
         <div class="p-4 border-top border-secondary border-opacity-10">
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3 w-100" role="button" data-bs-toggle="modal" data-bs-target="#profileModal" style="cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                 @if(Auth::user()->foto_profil)
                 <img src="{{ Storage::url(Auth::user()->foto_profil) }}" width="40" height="40" class="rounded-circle shadow-sm" style="object-fit:cover;">
                 @else
                 <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=3264ff&color=fff" width="40" height="40" class="rounded-circle shadow-sm">
                 @endif
-                <div>
+                <div class="flex-grow-1">
                     <h6 class="mb-0 text-white fw-semibold small">{{ Auth::user()->name }}</h6>
                     <span class="text-white-50 small" style="font-size: 0.7rem;">{{ ucfirst(Auth::user()->role) }}</span>
                 </div>
+                <i class="fa-solid fa-pen-to-square text-white-50" style="font-size: 0.85rem;"></i>
             </div>
         </div>
     </div>
@@ -359,7 +357,7 @@
                     <select name="hotel" onchange="this.form.submit()" class="form-select form-select-sm border-0 bg-light shadow-sm text-primary" style="min-width: 180px; font-weight: 600;">
                         <option value="">-- Semua Cabang Hotel --</option>
                         @foreach($hotelsList as $h)
-                            <option value="{{ $h }}" {{ $selectedHotel == $h ? 'selected' : '' }}>Premium Hotel {{ $h }}</option>
+                            <option value="{{ $h }}" {{ $selectedHotel == $h ? 'selected' : '' }}>Hotelku {{ $h }}</option>
                         @endforeach
                     </select>
                 </form>
@@ -455,10 +453,13 @@
                                         <div class="bg-primary bg-opacity-10 text-primary p-2 rounded"><i class="fa-solid fa-chart-line"></i></div>
                                         Grafik Pendapatan {{ date('Y') }}
                                     </h6>
-                                    <form action="{{ route('dashboard.reset_revenue') }}" method="POST" onsubmit="return confirm('Yakin ingin mereset semua pendapatan menjadi 0? Histori pembayaran akan dihapus namun histori booking tetap ada.');">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-rotate-left"></i> Reset Pendapatan</button>
-                                    </form>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ route('dashboard.report') }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-file-pdf"></i> Unduh Laporan PDF</a>
+                                        <form action="{{ route('dashboard.reset_revenue') }}" method="POST" onsubmit="return confirm('Yakin ingin mereset semua pendapatan menjadi 0? Histori pembayaran akan dihapus namun histori booking tetap ada.');">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-rotate-left"></i> Reset Pendapatan</button>
+                                        </form>
+                                    </div>
                                 </div>
                                 <div class="p-4">
                                     <canvas id="revenueChart" height="80"></canvas>
@@ -484,7 +485,7 @@
                         </div>
                         <div class="table-responsive">
                             <table class="table table-custom table-hover">
-                                <thead><tr><th class="ps-4">Cabang Hotel</th><th>Key Mapping</th><th>Pemilik (Owner)</th><th class="text-end">Aksi</th></tr></thead>
+                                <thead><tr><th class="ps-4">Cabang Hotel</th><th>Key Mapping</th><th>Manager</th><th class="text-end">Aksi</th></tr></thead>
                                 <tbody>
                                     @foreach($hotelsData as $htl)
                                     <tr>
@@ -496,7 +497,7 @@
                                                     <i class="fa-solid fa-user-tie text-muted"></i> <span class="fw-medium text-dark">{{ $htl->owner->name }}</span>
                                                 </div>
                                             @else
-                                                <span class="text-muted small"><i class="fa-solid fa-exclamation-circle text-warning me-1"></i>Belum Ada Pemilik</span>
+                                                <span class="text-muted small"><i class="fa-solid fa-exclamation-circle text-warning me-1"></i>Belum Ada Manager</span>
                                             @endif
                                         </td>
                                         <td class="text-end">
@@ -515,7 +516,7 @@
                 @endif
 
                 <!-- TAB KAMAR -->
-                <div class="tab-pane fade {{ Auth::user()->role == 'owner' ? 'show active' : '' }}" id="tab-hotel">
+                <div class="tab-pane fade {{ Auth::user()->role == 'manager' ? 'show active' : '' }}" id="tab-hotel">
                     <div class="row g-4">
                         <div class="col-lg-12">
                             <div class="card-custom">
@@ -802,7 +803,7 @@
                                                     @csrf
                                                     <select name="role" class="form-select form-select-sm shadow-sm" onchange="this.form.submit()" style="min-width: 100px; border-radius: 8px;">
                                                         <option value="admin" {{ $usr->role == 'admin' ? 'selected' : '' }}>Admin</option>
-                                                        <option value="owner" {{ $usr->role == 'owner' ? 'selected' : '' }}>Owner</option>
+                                                        <option value="manager" {{ $usr->role == 'manager' ? 'selected' : '' }}>Manager</option>
                                                         <option value="user" {{ $usr->role == 'user' ? 'selected' : '' }}>User</option>
                                                     </select>
                                                 </form>
@@ -871,44 +872,6 @@
                 </div>
                 @endif
 
-                <!-- TAB PROFIL (Admin/Owner) -->
-                <div class="tab-pane fade" id="tab-profile">
-                    <div class="card-custom">
-                        <div class="px-4 py-3 border-bottom">
-                            <h6 class="fw-bold mb-0 text-dark">Data Diri & Profil</h6>
-                        </div>
-                        <div class="p-4" style="max-width: 600px;">
-                            <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
-                                @csrf
-                                <div class="mb-3 text-center">
-                                    @if(Auth::user()->foto_profil)
-                                        <img src="{{ Storage::url(Auth::user()->foto_profil) }}" width="100" height="100" class="rounded-circle shadow-sm mb-2" style="object-fit:cover;">
-                                    @else
-                                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=3264ff&color=fff" width="100" height="100" class="rounded-circle shadow-sm mb-2">
-                                    @endif
-                                </div>
-                                <div class="mb-3">
-                                    <label class="small fw-semibold text-muted">Nama Lengkap</label>
-                                    <input type="text" name="name" class="form-control bg-light" value="{{ Auth::user()->name }}" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="small fw-semibold text-muted">Email Mendaftar</label>
-                                    <input type="email" name="email" class="form-control bg-light" value="{{ Auth::user()->email }}" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="small fw-semibold text-muted">Ganti Foto Profil (Biarkan kosong jika tidak ganti)</label>
-                                    <input type="file" name="foto" class="form-control" accept="image/*">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="small fw-semibold text-muted">Ganti Kata Sandi (Kosongkan jika tidak ingin ubah)</label>
-                                    <input type="password" name="password" class="form-control bg-light" minlength="6" placeholder="******">
-                                </div>
-                                <button type="submit" class="btn btn-primary fw-bold w-100 rounded-3 py-2 shadow-sm">Simpan Informasi Profil</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
             </div> <!-- End Tab Content -->
         </div> <!-- End Content Area -->
     </div> <!-- End Main Wrapper -->
@@ -927,13 +890,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body px-4 py-3">
-                    <div class="mb-3"><label class="small fw-semibold text-muted">Nama Cabang / Entitas</label><input type="text" name="name" class="form-control bg-light rounded-3 border-0 py-2" required placeholder="Ex: Premium Hotel Bali"></div>
+                    <div class="mb-3"><label class="small fw-semibold text-muted">Nama Cabang / Entitas</label><input type="text" name="name" class="form-control bg-light rounded-3 border-0 py-2" required placeholder="Ex: Hotelku Bali"></div>
                     <div class="mb-3"><label class="small fw-semibold text-muted">Location Key Mapping</label><input type="text" name="location_key" class="form-control bg-light rounded-3 border-0 py-2" required placeholder="Ex: Bali (harus unik dan sama dengan entri kamar)"></div>
                     <div class="mb-3">
-                        <label class="small fw-semibold text-muted">Pemilik / Pengelola (Owner)</label>
+                        <label class="small fw-semibold text-muted">Manager / Pengelola</label>
                         <select name="owner_id" class="form-select bg-light rounded-3 border-0 py-2">
-                            <option value="">-- Belum ada / Non-Owner --</option>
-                            @foreach($users->where('role', 'owner') as $o)
+                            <option value="">-- Belum ada Manager --</option>
+                            @foreach($users->where('role', 'manager') as $o)
                                 <option value="{{ $o->id }}">{{ $o->name }}</option>
                             @endforeach
                         </select>
@@ -962,7 +925,7 @@
                         <label class="small fw-semibold text-muted">Pemilik / Pengelola</label>
                         <select name="owner_id" class="form-select bg-light rounded-3 border-0 py-2">
                             <option value="">-- Kosongkan --</option>
-                            @foreach($users->where('role', 'owner') as $o)
+                            @foreach($users->where('role', 'manager') as $o)
                                 <option value="{{ $o->id }}" {{ $htl->owner_id == $o->id ? 'selected' : '' }}>{{ $o->name }}</option>
                             @endforeach
                         </select>
@@ -1060,7 +1023,7 @@
                     <div class="mb-3">
                         <label class="small fw-semibold text-muted">Pilih Cabang Hotel (Lokasi)</label>
                         <select name="location" class="form-select bg-light rounded-3 border-0 py-2">
-                            @if(Auth::user()->role == 'owner')
+                            @if(Auth::user()->role == 'manager')
                                 @foreach($hotelsData->where('owner_id', Auth::id()) as $htl)
                                     <option value="{{ $htl->location_key }}" selected>{{ $htl->name }} ({{ $htl->location_key }})</option>
                                 @endforeach
@@ -1123,7 +1086,7 @@
                     <div class="mb-3">
                         <label class="small fw-semibold text-muted">Pilih Cabang Hotel (Lokasi)</label>
                         <select name="location" class="form-select bg-light rounded-3 border-0 py-2">
-                            @if(Auth::user()->role == 'owner')
+                            @if(Auth::user()->role == 'manager')
                                 @foreach($hotelsData->where('owner_id', Auth::id()) as $htl)
                                     <option value="{{ $htl->location_key }}" selected>{{ $htl->name }} ({{ $htl->location_key }})</option>
                                 @endforeach
@@ -1179,7 +1142,7 @@
         <nav class="navbar navbar-expand-lg client-navbar sticky-top">
             <div class="container">
                 <a class="navbar-brand fw-bold text-primary d-flex align-items-center gap-2" href="/">
-                    <i class="fa-solid fa-hotel"></i> Premium Hotel
+                    <span class="fs-4 fw-bolder">Hotel<span class="text-primary">ku</span></span>
                 </a>
                 <div class="d-flex align-items-center gap-3">
                     @if(Auth::user()->foto_profil)
@@ -1299,35 +1262,36 @@
 
         </div>
     </div>
-    <!-- Modal Profil Pelanggan -->
-    <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow-lg rounded-4">
-                @csrf
-                <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
-                    <h5 class="fw-bold">Ubah Profil & Data Diri</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body px-4 py-3">
-                    <div class="mb-3 text-center">
-                        @if(Auth::user()->foto_profil)
-                            <img src="{{ Storage::url(Auth::user()->foto_profil) }}" width="80" height="80" class="rounded-circle shadow-sm mb-2" style="object-fit:cover;">
-                        @else
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=3264ff&color=fff" width="80" height="80" class="rounded-circle shadow-sm mb-2">
-                        @endif
-                    </div>
-                    <div class="mb-3"><label class="small fw-semibold text-muted">Nama Lengkap</label><input type="text" name="name" class="form-control bg-light rounded-3 border-0 py-2" value="{{ Auth::user()->name }}" required></div>
-                    <div class="mb-3"><label class="small fw-semibold text-muted">Email</label><input type="email" name="email" class="form-control bg-light rounded-3 border-0 py-2" value="{{ Auth::user()->email }}" required></div>
-                    <div class="mb-3"><label class="small fw-semibold text-muted">Unggah Foto Profil Baru</label><input type="file" name="foto" class="form-control rounded-3" accept="image/*"></div>
-                    <div class="mb-3"><label class="small fw-semibold text-muted">Password Baru (Biarkan kosong jika tidak diganti)</label><input type="password" name="password" class="form-control bg-light rounded-3 border-0 py-2" minlength="6" placeholder="******"></div>
-                </div>
-                <div class="modal-header border-top-0 pt-0 pb-4 px-4">
-                    <button class="btn btn-primary rounded-3 px-4 fw-bold shadow-sm w-100 pb-2">Simpan Profil Saya</button>
-                </div>
-            </form>
-        </div>
-    </div>
 @endif
+
+<!-- Modal Profil (Shared: Admin/Manager/Guest) -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow-lg rounded-4">
+            @csrf
+            <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                <h5 class="fw-bold"><i class="fa-solid fa-user-circle text-primary me-2"></i>Ubah Profil & Data Diri</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                <div class="mb-3 text-center">
+                    @if(Auth::user()->foto_profil)
+                        <img src="{{ Storage::url(Auth::user()->foto_profil) }}" width="80" height="80" class="rounded-circle shadow-sm mb-2" style="object-fit:cover;">
+                    @else
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=3264ff&color=fff" width="80" height="80" class="rounded-circle shadow-sm mb-2">
+                    @endif
+                </div>
+                <div class="mb-3"><label class="small fw-semibold text-muted">Nama Lengkap</label><input type="text" name="name" class="form-control bg-light rounded-3 border-0 py-2" value="{{ Auth::user()->name }}" required></div>
+                <div class="mb-3"><label class="small fw-semibold text-muted">Email</label><input type="email" name="email" class="form-control bg-light rounded-3 border-0 py-2" value="{{ Auth::user()->email }}" required></div>
+                <div class="mb-3"><label class="small fw-semibold text-muted">Unggah Foto Profil Baru</label><input type="file" name="foto" class="form-control rounded-3" accept="image/*"></div>
+                <div class="mb-3"><label class="small fw-semibold text-muted">Password Baru (Biarkan kosong jika tidak diganti)</label><input type="password" name="password" class="form-control bg-light rounded-3 border-0 py-2" minlength="6" placeholder="******"></div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
+                <button class="btn btn-primary rounded-3 px-4 fw-bold shadow-sm w-100 py-2">Simpan Profil Saya</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

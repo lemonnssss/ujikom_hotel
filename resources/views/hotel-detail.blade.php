@@ -239,7 +239,7 @@
                 <span>/</span>
                 <span style="color: rgba(255,255,255,0.8);">Hotel {{ $location ?: 'Pusat' }}</span>
             </div>
-            <h1>Premium Hotel {{ $location ?: 'Pusat' }}</h1>
+            <h1>Hotelku {{ $location ?: 'Pusat' }}</h1>
             <p>Pilih tipe kamar yang sesuai dengan kebutuhan Anda di cabang ini.</p>
         </div>
     </header>

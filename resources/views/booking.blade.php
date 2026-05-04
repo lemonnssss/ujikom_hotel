@@ -393,7 +393,7 @@
                                     <div class="card h-100 border-0" style="background:#f8f9fc; border-radius:10px;">
                                         <div class="card-body p-3 text-center">
                                             @if($menu->foto_url)
-                                            <img src="{{ Storage::url($menu->foto_url) }}" alt="{{ $menu->name }}" class="img-fluid rounded mb-2" style="height: 100px; object-fit: cover; width: 100%;">
+                                            <img src="{{ Str::startsWith($menu->foto_url, 'http') ? $menu->foto_url : asset('storage/' . $menu->foto_url) }}" alt="{{ $menu->name }}" class="img-fluid rounded mb-2" style="height: 100px; object-fit: cover; width: 100%;">
                                             @endif
                                             <h6 class="fw-bold mb-1" style="font-size:14px; color:var(--navy);">{{ $menu->name }}</h6>
                                             <p class="mb-2" style="font-size:12px; color:var(--text-secondary);">Rp {{ number_format($menu->price, 0, ',', '.') }}</p>
