@@ -260,13 +260,95 @@
             }
         }
 
+        @media (max-width: 767.98px) {
+            .table-custom thead {
+                display: none;
+            }
+            .table-custom tbody, .table-custom tr, .table-custom td {
+                display: block;
+                width: 100%;
+            }
+            .table-custom tbody {
+                padding: 0.5rem;
+            }
+            .table-custom tr {
+                margin-bottom: 1.5rem;
+                border: 1px solid #e2e8f0;
+                border-radius: 16px;
+                background: #ffffff;
+                box-shadow: 0 8px 24px rgba(149, 157, 165, 0.1);
+                transition: transform 0.2s;
+            }
+            .table-custom tr:hover {
+                transform: translateY(-2px);
+            }
+            .table-custom td {
+                text-align: left !important;
+                padding: 1rem 1.25rem !important;
+                border-bottom: 1px solid #f1f5f9;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+            .table-custom td:last-child {
+                border-bottom: none;
+                background-color: #f8fafc;
+                border-radius: 0 0 16px 16px;
+                align-items: flex-end;
+            }
+            .table-custom td:last-child .d-flex {
+                width: 100%;
+                justify-content: flex-end !important;
+            }
+            .table-custom td:last-child::before {
+                display: none; /* Sembunyikan label untuk kolom aksi */
+            }
+            /* Tampilkan label dari atribut data-label sebelum konten sel */
+            .table-custom td::before {
+                content: attr(data-label);
+                display: block;
+                width: 100%;
+                font-weight: 700;
+                font-size: 0.65rem;
+                color: #94a3b8;
+                text-transform: uppercase;
+                margin-bottom: 0.25rem;
+                letter-spacing: 1px;
+            }
+        }
+
         @media (max-width: 575.98px) {
+            .topbar {
+                gap: 0.5rem;
+            }
             .topbar h5 {
-                font-size: 1rem;
+                font-size: 0.9rem;
+                display: none; /* Sembunyikan text Dasbor Admin di mobile agar select fit */
+            }
+            .topbar .d-flex {
+                gap: 0.5rem !important;
             }
             .topbar .form-select {
-                min-width: 140px !important;
-                font-size: 0.8rem !important;
+                min-width: 110px !important;
+                max-width: 140px;
+                font-size: 0.75rem !important;
+                text-overflow: ellipsis;
+            }
+            .card-custom .border-bottom.d-flex {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 1rem;
+            }
+            .card-custom .border-bottom.d-flex > div,
+            .card-custom .border-bottom.d-flex > button {
+                width: 100%;
+                justify-content: flex-start !important;
+            }
+            .card-custom .border-bottom.d-flex .d-flex {
+                flex-direction: column;
+                width: 100% !important;
             }
             .stat-card h3 {
                 font-size: 1.1rem;
@@ -489,9 +571,9 @@
                                 <tbody>
                                     @foreach($hotelsData as $htl)
                                     <tr>
-                                        <td class="ps-4 fw-bold text-dark">{{ $htl->name }}</td>
-                                        <td><span class="badge badge-soft bg-info bg-opacity-10 text-info border border-info border-opacity-25">{{ $htl->location_key }}</span></td>
-                                        <td>
+                                        <td data-label="Cabang Hotel" class="ps-4 fw-bold text-dark">{{ $htl->name }}</td>
+                                        <td data-label="Key Mapping"><span class="badge badge-soft bg-info bg-opacity-10 text-info border border-info border-opacity-25">{{ $htl->location_key }}</span></td>
+                                        <td data-label="Manager">
                                             @if($htl->owner)
                                                 <div class="d-flex align-items-center gap-2">
                                                     <i class="fa-solid fa-user-tie text-muted"></i> <span class="fw-medium text-dark">{{ $htl->owner->name }}</span>
@@ -542,26 +624,26 @@
                                         <thead><tr><th>Informasi Kamar</th><th>Lokasi</th><th>Harga</th><th class="text-end">Aksi</th></tr></thead>
                                         <tbody>
                                             @foreach($rooms as $room)
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <img src="{{ Str::startsWith($room->foto_url, 'http') ? $room->foto_url : asset('storage/' . $room->foto_url) }}" class="rounded-3 shadow-sm object-fit-cover" style="width: 60px; height: 60px;">
-                                                        <div>
-                                                            <h6 class="mb-1 fw-bold text-dark">{{ $room->name }}</h6>
-                                                            <p class="mb-0 text-muted small text-truncate" style="max-width: 180px;">{{ $room->description }}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td><span class="badge badge-soft bg-info bg-opacity-10 text-info border border-info border-opacity-25">{{ $room->location ?? 'Umum' }}</span></td>
-                                                <td class="fw-bold text-success">Rp {{ number_format($room->price, 0, ',', '.') }}</td>
-                                                <td class="text-end">
-                                                    <div class="d-flex justify-content-end gap-2">
-                                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editRoom{{ $room->id }}"><i class="fa-solid fa-pen"></i></button>
-                                                        <a href="/dashboard/kamar/delete/{{ $room->id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus tipe kamar ini?')"><i class="fa-solid fa-trash"></i></a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            @endforeach
+                                    <tr>
+                                        <td data-label="Informasi Kamar">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img src="{{ Str::startsWith($room->foto_url, 'http') ? $room->foto_url : asset('storage/' . $room->foto_url) }}" class="rounded-3 shadow-sm object-fit-cover" style="width: 60px; height: 60px;">
+                                                <div>
+                                                    <h6 class="mb-1 fw-bold text-dark">{{ $room->name }}</h6>
+                                                    <p class="mb-0 text-muted small text-truncate" style="max-width: 180px;">{{ $room->description }}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td data-label="Lokasi"><span class="badge badge-soft bg-info bg-opacity-10 text-info border border-info border-opacity-25">{{ $room->location ?? 'Umum' }}</span></td>
+                                        <td data-label="Harga" class="fw-bold text-success">Rp {{ number_format($room->price, 0, ',', '.') }}</td>
+                                        <td data-label="Aksi" class="text-end">
+                                            <div class="d-flex justify-content-end gap-2">
+                                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editRoom{{ $room->id }}"><i class="fa-solid fa-pen"></i></button>
+                                                <a href="/dashboard/kamar/delete/{{ $room->id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus tipe kamar ini?')"><i class="fa-solid fa-trash"></i></a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
                                         </tbody>
                                     </table>
                                 </div>
@@ -598,7 +680,7 @@
                                         <tbody>
                                             @foreach($menus as $menu)
                                             <tr>
-                                                <td>
+                                                <td data-label="Menu">
                                                     <div class="d-flex align-items-center gap-3">
                                                         <img src="{{ Str::startsWith($menu->foto_url, 'http') ? $menu->foto_url : asset('storage/' . $menu->foto_url) }}" class="rounded-3 shadow-sm object-fit-cover" style="width: 60px; height: 60px;">
                                                         <div>
@@ -607,7 +689,7 @@
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class="fw-bold text-success">Rp {{ number_format($menu->price, 0, ',', '.') }}</td>
+                                                <td data-label="Harga" class="fw-bold text-success">Rp {{ number_format($menu->price, 0, ',', '.') }}</td>
                                                 <td class="text-end">
                                                     <div class="d-flex justify-content-end gap-2">
                                                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMenu{{ $menu->id }}"><i class="fa-solid fa-pen"></i></button>
@@ -718,18 +800,18 @@
                                 <tbody>
                                     @foreach($allBookings as $b)
                                     <tr>
-                                        <td>
+                                        <td data-label="Info Tamu">
                                             <div class="fw-bold text-dark">{{ $b->guest->name ?? '-' }}</div>
                                             <div class="small text-muted">{{ $b->guest->email ?? '-' }}</div>
                                         </td>
-                                        <td>
+                                        <td data-label="Detail Kamar / Tgl">
                                             <div class="fw-semibold text-primary">{{ $b->rooms->first()->roomType->name ?? '-' }} <span class="badge bg-secondary ms-1"> {{ $b->room_qty }} Kamar</span></div>
                                             <div class="small text-muted mb-1">No: {{ $b->rooms->pluck('room_number')->implode(', ') }}</div>
                                             <div class="small text-muted">Cabang {{ $b->rooms->first()->roomType->location ?? 'Pusat' }}</div>
                                             <div class="small text-muted mt-1"><i class="fa-regular fa-calendar me-1"></i> {{ \Carbon\Carbon::parse($b->check_in)->format('d M') }} - {{ \Carbon\Carbon::parse($b->check_out)->format('d M') }}</div>
                                         </td>
-                                        <td class="fw-bold text-dark">Rp {{ number_format($b->total_price, 0, ',', '.') }}</td>
-                                        <td>
+                                        <td data-label="Total Tagihan" class="fw-bold text-dark">Rp {{ number_format($b->total_price, 0, ',', '.') }}</td>
+                                        <td data-label="Pembayaran">
                                             @if($b->payments->where('payment_status', 'paid')->count() > 0)
                                                 <div class="d-flex align-items-center gap-2">
                                                     <span class="badge badge-soft bg-success text-white px-3"><i class="fa-solid fa-check me-1"></i>PAID</span>
@@ -739,7 +821,7 @@
                                                 <span class="badge badge-soft bg-danger text-white px-3"><i class="fa-solid fa-clock me-1"></i>PENDING</span>
                                             @endif
                                         </td>
-                                        <td class="text-end">
+                                        <td data-label="Status & Aksi" class="text-end">
                                             @if($b->status == 'pending')
                                                 <div class="d-flex justify-content-end gap-2">
                                                     <form action="/dashboard/booking/{{ $b->id }}/status" method="POST" class="m-0">
