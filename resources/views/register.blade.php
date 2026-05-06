@@ -219,10 +219,14 @@
                         <label class="form-label">Alamat Email</label>
                         <input type="email" name="email" class="form-control" placeholder="nama@email.com" required>
                     </div>
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label">Kata Sandi</label>
                         <input type="password" name="password" class="form-control" placeholder="••••••••" required>
                         <div class="password-hint"><i class="fa-solid fa-circle"></i> Minimal 6 karakter untuk keamanan akun</div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Konfirmasi Kata Sandi</label>
+                        <input type="password" name="password_confirmation" class="form-control" placeholder="••••••••" required>
                     </div>
                     <button type="submit" class="btn-register-main mb-4">
                         <i class="fa-solid fa-user-plus me-2"></i>Daftar Sekarang

@@ -347,7 +347,7 @@
 
     <footer class="footer-mini">
         <div class="container">
-            &copy; {{ date('Y') }} Hotelku. Crafted with <i class="fa-solid fa-heart"></i> for Premium Hospitality.
+            &copy; {{ date('Y') }} Hotelku. Copyright by Adib Rijalun. Crafted with <i class="fa-solid fa-heart"></i> for Premium Hospitality.
         </div>
     </footer>
 
