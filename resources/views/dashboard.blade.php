@@ -494,7 +494,6 @@
                 <div class="tab-pane fade show active" id="tab-statistics">
                     <!-- Stats Row -->
                     <div class="row g-4 mb-4 justify-content-center">
-                        @if(Auth::user()->role == 'admin')
                         <div class="col-md-4">
                             <div class="stat-card bg-primary shadow-sm">
                                 <div>
@@ -513,7 +512,6 @@
                                 <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
                             </div>
                         </div>
-                        @endif
                         <div class="col-md-4">
                             <div class="stat-card" style="background: #f59e0b; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);">
                                 <div>
@@ -525,7 +523,6 @@
                         </div>
                     </div>
 
-                    @if(Auth::user()->role == 'admin')
                     <!-- Chart Row -->
                     <div class="row mb-4">
                         <div class="col-12">
@@ -537,10 +534,12 @@
                                     </h6>
                                     <div class="d-flex gap-2">
                                         <a href="{{ route('dashboard.report') }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-file-pdf"></i> Unduh Laporan PDF</a>
+                                        @if(Auth::user()->role == 'admin')
                                         <form action="{{ route('dashboard.reset_revenue') }}" method="POST" onsubmit="return confirm('Yakin ingin mereset semua pendapatan menjadi 0? Histori pembayaran akan dihapus namun histori booking tetap ada.');">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-rotate-left"></i> Reset Pendapatan</button>
                                         </form>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="p-4">
@@ -549,7 +548,6 @@
                             </div>
                         </div>
                     </div>
-                    @endif
                 </div>
                 
                 @if(Auth::user()->role == 'admin')
@@ -1399,7 +1397,7 @@
             }
         }
         
-        @if(Auth::user()->role == 'admin' && isset($chartLabels) && isset($chartData))
+        @if((Auth::user()->role == 'admin' || Auth::user()->role == 'manager') && isset($chartLabels) && isset($chartData))
         // Render Chart
         const ctx = document.getElementById('revenueChart');
         if(ctx) {

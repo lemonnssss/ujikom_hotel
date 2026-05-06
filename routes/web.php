@@ -91,3 +91,7 @@ Route::middleware('auth')->group(function () {
 
 // Midtrans Webhook (tanpa auth & CSRF)
 Route::post('/midtrans/notification', [MidtransController::class, 'handleNotification'])->name('midtrans.notification');
+
+Route::get('/cek-loadbalance', function () {
+    return "<h1>Aplikasi HotelKu Jalan!</h1><p>Dilayani oleh Container ID: <b>" . gethostname() . "</b></p>";
+});

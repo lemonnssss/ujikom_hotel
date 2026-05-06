@@ -64,13 +64,28 @@ class DashboardController extends Controller
             $users = \App\Models\User::all();
             
             // Statistik
-            $totalRevenue = \App\Models\Payment::where('payment_status', 'paid')->sum('amount');
+            $paymentsQuery = \App\Models\Payment::where('payment_status', 'paid');
+            if ($selectedHotel) {
+                $paymentsQuery->where(function ($q) use ($selectedHotel) {
+                    $q->whereHas('booking.rooms.roomType', function($q2) use ($selectedHotel) {
+                        if ($selectedHotel == 'Pusat') {
+                            $q2->whereNull('location')->orWhere('location', '');
+                        } else {
+                            $q2->where('location', $selectedHotel);
+                        }
+                    });
+                    if ($selectedHotel == 'Pusat') {
+                        $q->orWhereDoesntHave('booking');
+                    }
+                });
+            }
+            $totalRevenue = (clone $paymentsQuery)->sum('amount');
             
             // Chart Data (Pendapatan per Bulan tahun ini)
-            $revenueData = \App\Models\Payment::select(
+            $revenueData = (clone $paymentsQuery)->select(
                 \DB::raw('MONTH(created_at) as month'), 
                 \DB::raw('SUM(amount) as total')
-            )->where('payment_status', 'paid')
+            )
             ->whereYear('created_at', date('Y'))
             ->groupBy('month')
             ->orderBy('month')
@@ -481,6 +496,10 @@ class DashboardController extends Controller
         }
 
         $selectedHotel = request('hotel');
+        if ($user->role == 'manager') {
+            $myHotel = \App\Models\Hotel::where('owner_id', $user->id)->first();
+            $selectedHotel = $myHotel ? $myHotel->location_key : 'UNASSIGNED_HOTEL_xxx';
+        }
         
         $bookingsForStats = \App\Models\Booking::query();
         $roomsForStats = \App\Models\Room::where('status', 'occupied');
@@ -505,12 +524,28 @@ class DashboardController extends Controller
         
         $totalBookings = $bookingsForStats->count();
         $occupiedRoomsCount = $roomsForStats->count();
-        $totalRevenue = \App\Models\Payment::where('payment_status', 'paid')->sum('amount');
 
-        $revenueData = \App\Models\Payment::select(
+        $paymentsQuery = \App\Models\Payment::where('payment_status', 'paid');
+        if ($selectedHotel) {
+            $paymentsQuery->where(function ($q) use ($selectedHotel) {
+                $q->whereHas('booking.rooms.roomType', function($q2) use ($selectedHotel) {
+                    if ($selectedHotel == 'Pusat') {
+                        $q2->whereNull('location')->orWhere('location', '');
+                    } else {
+                        $q2->where('location', $selectedHotel);
+                    }
+                });
+                if ($selectedHotel == 'Pusat') {
+                    $q->orWhereDoesntHave('booking');
+                }
+            });
+        }
+        $totalRevenue = (clone $paymentsQuery)->sum('amount');
+
+        $revenueData = (clone $paymentsQuery)->select(
             \DB::raw('MONTH(created_at) as month'), 
             \DB::raw('SUM(amount) as total')
-        )->where('payment_status', 'paid')
+        )
         ->whereYear('created_at', date('Y'))
         ->groupBy('month')
         ->orderBy('month')
