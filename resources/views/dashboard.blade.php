@@ -736,6 +736,10 @@
                                             <label class="form-label small fw-semibold">Nomor Kamar</label>
                                             <input type="text" name="room_number" class="form-control" placeholder="Contoh: 101, 203" required>
                                         </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-semibold">Lantai</label>
+                                            <input type="number" name="floor" class="form-control" placeholder="Contoh: 1, 2, 3">
+                                        </div>
                                         <div class="mb-4">
                                             <label class="form-label small fw-semibold">Status Awal</label>
                                             <select name="status" class="form-select bg-light" required>
@@ -760,7 +764,12 @@
                                         <tbody>
                                             @foreach($allRooms as $r)
                                             <tr>
-                                                <td><span class="fw-bold text-primary fs-5">{{ $r->room_number }}</span></td>
+                                                <td>
+                                                    <span class="fw-bold text-primary fs-5">{{ $r->room_number }}</span>
+                                                    @if($r->floor)
+                                                        <div class="small text-muted mt-1"><i class="fa-solid fa-stairs ms-1 me-1"></i>Lantai {{ $r->floor }}</div>
+                                                    @endif
+                                                </td>
                                                 <td>
                                                     <div class="fw-semibold text-dark">{{ $r->roomType->name ?? '-' }}</div>
                                                     <div class="small text-muted">Cabang {{ $r->roomType->location ?? 'Pusat' }}</div>
@@ -817,7 +826,11 @@
                                         </td>
                                         <td data-label="Detail Kamar / Tgl">
                                             <div class="fw-semibold text-primary">{{ $b->rooms->first()->roomType->name ?? '-' }} <span class="badge bg-secondary ms-1"> {{ $b->room_qty }} Kamar</span></div>
-                                            <div class="small text-muted mb-1">No: {{ $b->rooms->pluck('room_number')->implode(', ') }}</div>
+                                            <div class="small text-muted mb-1">No: {{ $b->rooms->pluck('room_number')->implode(', ') }} 
+                                            @if($b->rooms->first() && $b->rooms->first()->floor)
+                                                (Lt. {{ $b->rooms->pluck('floor')->unique()->implode(', ') }})
+                                            @endif
+                                            </div>
                                             <div class="small text-muted">Cabang {{ $b->rooms->first()->roomType->location ?? 'Pusat' }}</div>
                                             <div class="small text-muted mt-1"><i class="fa-regular fa-calendar me-1"></i> {{ \Carbon\Carbon::parse($b->check_in)->format('d M') }} - {{ \Carbon\Carbon::parse($b->check_out)->format('d M') }}</div>
                                         </td>
@@ -1400,7 +1413,12 @@
                                 <tr>
                                     <td class="ps-4">
                                         <div class="fw-bold text-dark">{{ $b->rooms->first()->roomType->name ?? '-' }}</div>
-                                        <span class="badge bg-light border text-muted">Cabang {{ $b->rooms->first()->roomType->location ?? 'Pusat' }} | No Kamar: {{ $b->rooms->pluck('room_number')->implode(', ') ?: 'Belum ditentukan' }}</span>
+                                        <span class="badge bg-light border text-muted">
+                                            Cabang {{ $b->rooms->first()->roomType->location ?? 'Pusat' }} | No Kamar: {{ $b->rooms->pluck('room_number')->implode(', ') ?: 'Belum ditentukan' }}
+                                            @if($b->rooms->first() && $b->rooms->first()->floor)
+                                                | Lt: {{ $b->rooms->pluck('floor')->unique()->implode(', ') }}
+                                            @endif
+                                        </span>
                                     </td>
                                     <td>
                                         <div class="fw-medium">{{ \Carbon\Carbon::parse($b->check_in)->format('d M Y') }}</div>

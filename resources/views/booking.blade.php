@@ -375,6 +375,17 @@
                             </div>
 
                             <div class="mb-4">
+                                <label class="form-label">Tipe Tempat Tidur (Bed Type)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-bed"></i></span>
+                                    <select name="bed_type" class="form-control" required>
+                                        <option value="double">Double Bed (Untuk 2 Orang)</option>
+                                        <option value="single">Single Bed (Untuk 1 Orang)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
                                 <label class="form-label">Permintaan Khusus (Opsional)</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-regular fa-comment-dots"></i></span>

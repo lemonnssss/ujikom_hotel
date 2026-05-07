@@ -301,7 +301,8 @@ class DashboardController extends Controller
     // --- CRUD STOK KAMAR (INDIVIDUAL) ---
     public function storeSpecificRoom(Request $request) {
         $request->validate([
-            'room_number' => 'required|unique:rooms,room_number'
+            'room_number' => 'required|unique:rooms,room_number',
+            'floor' => 'nullable|integer'
         ], [
             'room_number.unique' => 'Gagal! Nomor kamar "' . $request->room_number . '" sudah terdaftar di sistem. Silakan gunakan nomor yang berbeda.'
         ]);
@@ -309,6 +310,7 @@ class DashboardController extends Controller
         \App\Models\Room::create([
             'room_type_id' => $request->room_type_id,
             'room_number' => $request->room_number,
+            'floor' => $request->floor,
             'status' => $request->status ?? 'available'
         ]);
         return back()->with('success', 'Data kamar berhasil ditambahkan ke stok!');

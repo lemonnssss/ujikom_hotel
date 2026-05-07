@@ -300,6 +300,10 @@
                             <span class="value">{{ $data->rooms->first()->roomType->name ?? 'Tipe Kamar' }} ({{ $data->room_qty }} Kamar: No. {{ $data->rooms->pluck('room_number')->implode(', ') }})</span>
                         </div>
                         <div class="summary-row">
+                            <span class="label">Tipe Tempat Tidur</span>
+                            <span class="value">{{ ucfirst($data->bed_type ?? 'Double') }}</span>
+                        </div>
+                        <div class="summary-row">
                             <span class="label">Check-in</span>
                             <span class="value">{{ \Carbon\Carbon::parse($data->check_in)->isoFormat('D MMM YYYY') }}</span>
                         </div>

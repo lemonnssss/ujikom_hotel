@@ -157,6 +157,7 @@ class LandingController extends Controller
             'adults_count' => 'required|integer|min:1',
             'children_count' => 'nullable|integer|min:0',
             'special_requests' => 'nullable|string',
+            'bed_type' => 'required|in:double,single',
             'menus' => 'nullable|array',
             'menus.*.qty' => 'nullable|integer|min:0',
             'menus.*.id' => 'nullable|integer|exists:restaurant_menus,id',
@@ -240,6 +241,7 @@ class LandingController extends Controller
             'adults_count' => $request->adults_count,
             'children_count' => $request->children_count ?? 0,
             'room_qty' => $request->room_qty,
+            'bed_type' => $request->bed_type,
             'special_requests' => $request->special_requests,
             'total_price' => $totalPrice, // Sudah dipotong
             'discount_amount' => $discountAmount,
