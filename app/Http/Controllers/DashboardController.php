@@ -14,7 +14,7 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role == 'admin' || $user->role == 'manager') {
+        if ($user->role == 'admin' || $user->role == 'manager' || $user->role == 'receptionist') {
             $hotelsData = \App\Models\Hotel::with('owner')->get();
             
             if ($user->role == 'manager') {
@@ -329,7 +329,7 @@ class DashboardController extends Controller
     // --- MANAJEMEN RESERVASI ---
     public function storeManualBooking(Request $request) {
         $user = Auth::user();
-        if ($user->role !== 'admin' && $user->role !== 'manager') {
+        if ($user->role !== 'admin' && $user->role !== 'manager' && $user->role !== 'receptionist') {
             abort(403, 'Anda tidak berhak membuat reservasi manual.');
         }
 
@@ -411,7 +411,7 @@ class DashboardController extends Controller
         $action = $request->action;
 
         // Cek keamanan jika user bukan admin/manager
-        if ($user->role !== 'admin' && $user->role !== 'manager') {
+        if ($user->role !== 'admin' && $user->role !== 'manager' && $user->role !== 'receptionist') {
             // Hanya izinkan aksi cancel
             if ($action !== 'cancel') {
                 abort(403, 'Anda tidak berhak mengubah status ini.');
@@ -472,7 +472,7 @@ class DashboardController extends Controller
         $user = Auth::user();
         $action = $request->action;
 
-        if ($user->role !== 'admin' && $user->role !== 'manager') {
+        if ($user->role !== 'admin' && $user->role !== 'manager' && $user->role !== 'receptionist') {
             if ($action !== 'cancel') {
                 abort(403, 'Anda tidak berhak mengubah status ini.');
             }
@@ -489,6 +489,63 @@ class DashboardController extends Controller
             return back()->with('success', 'Pesanan Restoran Dibatalkan.');
         }
         return back();
+    }
+
+    public function storeManualRestaurantOrder(Request $request) {
+        $user = Auth::user();
+        if ($user->role !== 'admin' && $user->role !== 'manager' && $user->role !== 'receptionist') {
+            abort(403, 'Anda tidak berhak membuat pesanan manual.');
+        }
+
+        $request->validate([
+            'guest_name' => 'required|string|max:50',
+            'guest_email' => 'required|email|max:255',
+            'guest_phone' => 'required|string|max:15',
+            'menu_id' => 'required|exists:restaurant_menus,id',
+            'quantity' => 'required|integer|min:1',
+            'room_number' => 'nullable|string',
+            'note' => 'nullable|string',
+            'payment_status' => 'required|in:paid,pending',
+        ]);
+
+        $menu = \App\Models\RestaurantMenu::findOrFail($request->menu_id);
+
+        $guest = \App\Models\Guest::firstOrCreate(
+            ['email' => $request->guest_email],
+            [
+                'name' => $request->guest_name,
+                'phone' => $request->guest_phone,
+                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(10)),
+            ]
+        );
+
+        $totalPrice = $menu->price * $request->quantity;
+
+        $order = \App\Models\RestaurantOrder::create([
+            'guest_id' => $guest->id,
+            'room_number' => $request->room_number,
+            'total_price' => $totalPrice,
+            'note' => $request->note,
+            'status' => 'ordered',
+        ]);
+
+        \App\Models\RestaurantOrderDetail::create([
+            'restaurant_order_id' => $order->id,
+            'menu_id' => $menu->id,
+            'quantity' => $request->quantity,
+            'price' => $menu->price,
+        ]);
+
+        if ($request->payment_status == 'paid') {
+            \App\Models\Payment::create([
+                'restaurant_order_id' => $order->id,
+                'amount' => $totalPrice,
+                'payment_method' => 'cash',
+                'payment_status' => 'paid',
+            ]);
+        }
+
+        return back()->with('success', 'Pesanan manual restoran berhasil dibuat!');
     }
 
     // --- KELOLA PENGGUNA ---
@@ -511,7 +568,7 @@ class DashboardController extends Controller
         $booking = \App\Models\Booking::with(['rooms.roomType', 'guest', 'payments', 'restaurantOrder.details.menu'])->findOrFail($id);
 
         // Security check: Only original guest or admin/manager can download
-        if ($user->role !== 'admin' && $user->role !== 'manager') {
+        if ($user->role !== 'admin' && $user->role !== 'manager' && $user->role !== 'receptionist') {
             if (!$booking->guest || $booking->guest->email !== $user->email) {
                 abort(403, 'Unauthorized access to this invoice.');
             }

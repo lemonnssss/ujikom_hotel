@@ -66,6 +66,15 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        User::firstOrCreate(
+            ['email' => 'receptionist@hotel.com'],
+            [
+                'name' => 'Receptionist Utama',
+                'password' => Hash::make('password'),
+                'role' => 'receptionist',
+            ]
+        );
+
         // ===================================================
         // 2. SEED HOTELS (3 Cabang)
         // ===================================================

@@ -361,7 +361,7 @@
 </head>
 <body>
 
-@if(Auth::user()->role == 'admin' || Auth::user()->role == 'manager')
+@if(Auth::user()->role == 'admin' || Auth::user()->role == 'manager' || Auth::user()->role == 'receptionist')
     <!-- ADMIN SIDEBAR -->
     <div class="sidebar shadow-lg">
         <div class="sidebar-header">
@@ -384,7 +384,7 @@
             <button class="nav-item-btn" data-bs-toggle="pill" data-bs-target="#tab-hotel">
                 <i class="fa-solid fa-bed w-20px text-center"></i> Kamar & Lokasi
             </button>
-            @if(Auth::user()->role == 'admin')
+            @if(Auth::user()->role == 'admin' || Auth::user()->role == 'receptionist')
             <button class="nav-item-btn" data-bs-toggle="pill" data-bs-target="#tab-resto">
                 <i class="fa-solid fa-utensils w-20px text-center"></i> Menu Restoran
             </button>
@@ -434,7 +434,7 @@
                 <h5 class="fw-bold mb-0 text-dark">Dasbor Admin</h5>
             </div>
             <div class="d-flex align-items-center gap-3">
-                @if(Auth::user()->role == 'admin')
+                @if(Auth::user()->role == 'admin' || Auth::user()->role == 'receptionist')
                 <form action="" method="GET" class="m-0" title="Filter Data Berdasarkan Cabang Hotel">
                     <select name="hotel" onchange="this.form.submit()" class="form-select form-select-sm border-0 bg-light shadow-sm text-primary" style="min-width: 180px; font-weight: 600;">
                         <option value="">-- Semua Cabang Hotel --</option>
@@ -667,14 +667,19 @@
                                                 <input type="text" name="search_menu" class="form-control bg-light border-0" placeholder="Cari menu...">
                                             </div>
                                         </form>
+                                        <button class="btn btn-primary fw-semibold d-flex align-items-center gap-2 shadow-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#addManualRestoModal">
+                                            <i class="fa-solid fa-cart-plus"></i> Pesanan Manual
+                                        </button>
+                                        @if(Auth::user()->role == 'admin')
                                         <button class="btn btn-success fw-semibold d-flex align-items-center gap-2 shadow-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#addMenuModal">
                                             <i class="fa-solid fa-plus"></i> Tambah Menu
                                         </button>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="table-responsive">
                                     <table class="table table-custom table-hover">
-                                        <thead><tr><th>Menu</th><th>Harga</th><th class="text-end">Aksi</th></tr></thead>
+                                        <thead><tr><th>Menu</th><th>Harga</th>@if(Auth::user()->role == 'admin')<th class="text-end">Aksi</th>@endif</tr></thead>
                                         <tbody>
                                             @foreach($menus as $menu)
                                             <tr>
@@ -688,12 +693,14 @@
                                                     </div>
                                                 </td>
                                                 <td data-label="Harga" class="fw-bold text-success">Rp {{ number_format($menu->price, 0, ',', '.') }}</td>
+                                                @if(Auth::user()->role == 'admin')
                                                 <td class="text-end">
                                                     <div class="d-flex justify-content-end gap-2">
                                                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMenu{{ $menu->id }}"><i class="fa-solid fa-pen"></i></button>
                                                         <a href="/dashboard/menu/delete/{{ $menu->id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus menu ini?')"><i class="fa-solid fa-trash"></i></a>
                                                     </div>
                                                 </td>
+                                                @endif
                                             </tr>
                                             @endforeach
                                         </tbody>
@@ -890,6 +897,7 @@
                                                     <select name="role" class="form-select form-select-sm shadow-sm" onchange="this.form.submit()" style="min-width: 100px; border-radius: 8px;">
                                                         <option value="admin" {{ $usr->role == 'admin' ? 'selected' : '' }}>Admin</option>
                                                         <option value="manager" {{ $usr->role == 'manager' ? 'selected' : '' }}>Manager</option>
+                                                        <option value="receptionist" {{ $usr->role == 'receptionist' ? 'selected' : '' }}>Resepsionis</option>
                                                         <option value="user" {{ $usr->role == 'user' ? 'selected' : '' }}>User</option>
                                                     </select>
                                                 </form>
@@ -1216,6 +1224,71 @@
                 <div class="modal-header border-top-0 pt-0 pb-4 px-4">
                     <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
                     <button class="btn btn-primary rounded-3 px-4 fw-bold shadow-sm w-100 ms-2">Buat Reservasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Pesanan Restoran Manual -->
+    <div class="modal fade" id="addManualRestoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <form action="/dashboard/restaurant-order/manual-store" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+                @csrf
+                <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                    <h5 class="fw-bold"><i class="fa-solid fa-cart-plus text-primary me-2"></i>Buat Pesanan Restoran Manual</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-semibold text-muted">Nama Pelanggan</label>
+                            <input type="text" name="guest_name" class="form-control bg-light rounded-3 border-0 py-2" required placeholder="Nama lengkap">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-semibold text-muted">Email</label>
+                            <input type="email" name="guest_email" class="form-control bg-light rounded-3 border-0 py-2" required placeholder="email@contoh.com">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-semibold text-muted">Nomor HP / WA</label>
+                            <input type="text" name="guest_phone" class="form-control bg-light rounded-3 border-0 py-2" required placeholder="08xxxxxxxxxx">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-semibold text-muted">Nomor Kamar (Opsional)</label>
+                            <input type="text" name="room_number" class="form-control bg-light rounded-3 border-0 py-2" placeholder="Contoh: 101">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="small fw-semibold text-muted">Pilih Menu</label>
+                            <select name="menu_id" class="form-select bg-light rounded-3 border-0 py-2" required>
+                                <option value="">-- Pilih Menu Makanan/Minuman --</option>
+                                @foreach($menus as $menu)
+                                    <option value="{{ $menu->id }}">{{ $menu->name }} - Rp {{ number_format($menu->price, 0, ',', '.') }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="small fw-semibold text-muted">Jumlah Porsi</label>
+                            <input type="number" name="quantity" class="form-control bg-light rounded-3 border-0 py-2" required min="1" value="1">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-semibold text-muted">Catatan Pesanan (Opsional)</label>
+                        <textarea name="note" class="form-control bg-light rounded-3 border-0 py-2" rows="2" placeholder="Contoh: Tidak pedas, tambah es, dll."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-semibold text-muted">Status Pembayaran</label>
+                        <select name="payment_status" class="form-select bg-light rounded-3 border-0 py-2" required>
+                            <option value="paid">Lunas (Cash / Transfer)</option>
+                            <option value="pending">Belum Lunas (Bayar Nanti)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-header border-top-0 pt-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
+                    <button class="btn btn-primary rounded-3 px-4 fw-bold shadow-sm w-100 ms-2">Buat Pesanan Restoran</button>
                 </div>
             </form>
         </div>
