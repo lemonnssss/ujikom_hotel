@@ -196,39 +196,39 @@ class DatabaseSeeder extends Seeder
 
         // BALI - Standard: 101-105
         for ($i = 1; $i <= 5; $i++) {
-            Room::firstOrCreate(['room_number' => 'BL-10' . $i], ['room_type_id' => $baliStandard->id, 'status' => 'available']);
+            Room::updateOrCreate(['room_number' => 'BL-10' . $i], ['room_type_id' => $baliStandard->id, 'floor' => 1, 'status' => 'available']);
         }
         // BALI - Deluxe: 201-203
         for ($i = 1; $i <= 3; $i++) {
-            Room::firstOrCreate(['room_number' => 'BL-20' . $i], ['room_type_id' => $baliDeluxe->id, 'status' => 'available']);
+            Room::updateOrCreate(['room_number' => 'BL-20' . $i], ['room_type_id' => $baliDeluxe->id, 'floor' => 2, 'status' => 'available']);
         }
         // BALI - Villa: V1-V2
-        Room::firstOrCreate(['room_number' => 'BL-V1'], ['room_type_id' => $baliVilla->id, 'status' => 'available']);
-        Room::firstOrCreate(['room_number' => 'BL-V2'], ['room_type_id' => $baliVilla->id, 'status' => 'available']);
+        Room::updateOrCreate(['room_number' => 'BL-V1'], ['room_type_id' => $baliVilla->id, 'floor' => 1, 'status' => 'available']);
+        Room::updateOrCreate(['room_number' => 'BL-V2'], ['room_type_id' => $baliVilla->id, 'floor' => 1, 'status' => 'available']);
 
         // JAKARTA - Superior: 101-105
         for ($i = 1; $i <= 5; $i++) {
-            Room::firstOrCreate(['room_number' => 'JK-10' . $i], ['room_type_id' => $jktStandard->id, 'status' => 'available']);
+            Room::updateOrCreate(['room_number' => 'JK-10' . $i], ['room_type_id' => $jktStandard->id, 'floor' => 1, 'status' => 'available']);
         }
         // JAKARTA - Deluxe: 201-204
         for ($i = 1; $i <= 4; $i++) {
-            Room::firstOrCreate(['room_number' => 'JK-20' . $i], ['room_type_id' => $jktDeluxe->id, 'status' => 'available']);
+            Room::updateOrCreate(['room_number' => 'JK-20' . $i], ['room_type_id' => $jktDeluxe->id, 'floor' => 2, 'status' => 'available']);
         }
         // JAKARTA - Presidential: P1-P2
-        Room::firstOrCreate(['room_number' => 'JK-P1'], ['room_type_id' => $jktPresidential->id, 'status' => 'available']);
-        Room::firstOrCreate(['room_number' => 'JK-P2'], ['room_type_id' => $jktPresidential->id, 'status' => 'available']);
+        Room::updateOrCreate(['room_number' => 'JK-P1'], ['room_type_id' => $jktPresidential->id, 'floor' => 3, 'status' => 'available']);
+        Room::updateOrCreate(['room_number' => 'JK-P2'], ['room_type_id' => $jktPresidential->id, 'floor' => 3, 'status' => 'available']);
 
         // JOGJA - Heritage: 101-105
         for ($i = 1; $i <= 5; $i++) {
-            Room::firstOrCreate(['room_number' => 'YK-10' . $i], ['room_type_id' => $jogjaStandard->id, 'status' => 'available']);
+            Room::updateOrCreate(['room_number' => 'YK-10' . $i], ['room_type_id' => $jogjaStandard->id, 'floor' => 1, 'status' => 'available']);
         }
         // JOGJA - Deluxe: 201-203
         for ($i = 1; $i <= 3; $i++) {
-            Room::firstOrCreate(['room_number' => 'YK-20' . $i], ['room_type_id' => $jogjaDeluxe->id, 'status' => 'available']);
+            Room::updateOrCreate(['room_number' => 'YK-20' . $i], ['room_type_id' => $jogjaDeluxe->id, 'floor' => 2, 'status' => 'available']);
         }
         // JOGJA - Royal: R1-R2
-        Room::firstOrCreate(['room_number' => 'YK-R1'], ['room_type_id' => $jogjaRoyal->id, 'status' => 'available']);
-        Room::firstOrCreate(['room_number' => 'YK-R2'], ['room_type_id' => $jogjaRoyal->id, 'status' => 'available']);
+        Room::updateOrCreate(['room_number' => 'YK-R1'], ['room_type_id' => $jogjaRoyal->id, 'floor' => 1, 'status' => 'available']);
+        Room::updateOrCreate(['room_number' => 'YK-R2'], ['room_type_id' => $jogjaRoyal->id, 'floor' => 1, 'status' => 'available']);
 
         // ===================================================
         // 5. SEED RESTAURANT MENUS (Variasi lengkap)

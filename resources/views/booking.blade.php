@@ -379,8 +379,8 @@
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa-solid fa-bed"></i></span>
                                     <select name="bed_type" class="form-control" required>
-                                        <option value="double">Double Bed (Untuk 2 Orang)</option>
-                                        <option value="single">Single Bed (Untuk 1 Orang)</option>
+                                        <option value="double">Double Bed (Untuk 2 Orang) - Harga Normal</option>
+                                        <option value="single">Single Bed (Untuk 1 Orang) - Lebih hemat Rp 50.000/malam</option>
                                     </select>
                                 </div>
                             </div>
@@ -493,6 +493,7 @@
         const checkInInput = document.getElementById('check_in');
         const checkOutInput = document.getElementById('check_out');
         const roomQtyInput = document.getElementById('room_qty');
+        const bedTypeInput = document.querySelector('select[name="bed_type"]');
         const pricePerNight = {{ $roomType->price }};
         const summaryContainer = document.getElementById('price-summary');
         const daysCountSpan = document.getElementById('days-count');
@@ -541,10 +542,15 @@
                 const diffTime = Math.abs(checkOutDate - checkInDate);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 const roomQty = parseInt(roomQtyInput.value) || 1;
+                
+                let currentPricePerNight = pricePerNight;
+                if (bedTypeInput && bedTypeInput.value === 'single') {
+                    currentPricePerNight -= 50000;
+                }
 
-                daysCountSpan.textContent = diffDays + " malam × " + roomQty + " kamar";
+                daysCountSpan.textContent = diffDays + " malam × " + roomQty + " kamar (" + (bedTypeInput.value === 'single' ? 'Single Bed' : 'Double Bed') + ")";
 
-                const roomTotalPrice = diffDays * pricePerNight * roomQty;
+                const roomTotalPrice = diffDays * currentPricePerNight * roomQty;
                 
                 let restaurantTotal = 0;
                 document.querySelectorAll('.menu-qty').forEach(function(input) {
@@ -587,6 +593,9 @@
         checkOutInput.addEventListener('change', calculateTotal);
         roomQtyInput.addEventListener('change', calculateTotal);
         roomQtyInput.addEventListener('input', calculateTotal);
+        if (bedTypeInput) {
+            bedTypeInput.addEventListener('change', calculateTotal);
+        }
 
         document.querySelectorAll('.menu-qty').forEach(function(input) {
             input.addEventListener('change', calculateTotal);

@@ -210,7 +210,12 @@ class LandingController extends Controller
         // Hitung total harga
         $days = $checkIn->diffInDays($checkOut);
         $days = $days == 0 ? 1 : $days; // Minimal 1 hari
-        $roomPriceOrigin = $days * $roomType->price * $request->room_qty;
+        $roomPricePerNight = $roomType->price;
+        if ($request->bed_type === 'single') {
+            $roomPricePerNight -= 50000;
+        }
+
+        $roomPriceOrigin = $days * $roomPricePerNight * $request->room_qty;
         $totalPrice = $roomPriceOrigin;
         
         $discountAmount = 0;
