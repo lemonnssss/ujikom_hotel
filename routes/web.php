@@ -69,6 +69,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/room-item/delete/{id}', [DashboardController::class, 'deleteSpecificRoom']);
 
     // Manajemen Reservasi
+    Route::post('/dashboard/booking/manual-store', [DashboardController::class, 'storeManualBooking']);
     Route::post('/dashboard/booking/{id}/status', [DashboardController::class, 'updateBookingStatus']);
     
     // Status Pesanan Restoran

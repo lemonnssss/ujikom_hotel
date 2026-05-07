@@ -327,6 +327,84 @@ class DashboardController extends Controller
     }
 
     // --- MANAJEMEN RESERVASI ---
+    public function storeManualBooking(Request $request) {
+        $user = Auth::user();
+        if ($user->role !== 'admin' && $user->role !== 'manager') {
+            abort(403, 'Anda tidak berhak membuat reservasi manual.');
+        }
+
+        $request->validate([
+            'guest_name' => 'required|string|max:50',
+            'guest_email' => 'required|email|max:255',
+            'guest_phone' => 'required|string|max:15',
+            'room_type_id' => 'required|exists:room_types,id',
+            'check_in' => 'required|date',
+            'check_out' => 'required|date|after:check_in',
+            'room_qty' => 'required|integer|min:1|max:5',
+            'payment_status' => 'required|in:paid,pending',
+        ]);
+
+        $roomType = RoomType::findOrFail($request->room_type_id);
+        
+        $checkIn = \Carbon\Carbon::parse($request->check_in)->startOfDay();
+        $checkOut = \Carbon\Carbon::parse($request->check_out)->startOfDay();
+
+        $rooms = \App\Models\Room::where('room_type_id', $roomType->id)
+                    ->where('status', '!=', 'maintenance')
+                    ->whereDoesntHave('bookings', function($query) use ($checkIn, $checkOut) {
+                        $query->whereIn('status', ['pending', 'confirmed', 'checked_in'])
+                              ->where(function ($subQuery) use ($checkIn, $checkOut) {
+                                  $subQuery->whereBetween('check_in', [$checkIn, $checkOut])
+                                           ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                                           ->orWhere(function ($q) use ($checkIn, $checkOut) {
+                                               $q->where('check_in', '<=', $checkIn)
+                                                 ->where('check_out', '>=', $checkOut);
+                                           });
+                              });
+                    })->limit($request->room_qty)->get();
+
+        if ($rooms->count() < $request->room_qty) {
+            return back()->with('error', 'Gagal: Hanya tersedia ' . $rooms->count() . ' kamar kosong pada tanggal tersebut untuk tipe ' . $roomType->name);
+        }
+
+        $guest = \App\Models\Guest::firstOrCreate(
+            ['email' => $request->guest_email],
+            [
+                'name' => $request->guest_name,
+                'phone' => $request->guest_phone,
+                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(10)),
+            ]
+        );
+
+        $days = $checkIn->diffInDays($checkOut);
+        $days = $days == 0 ? 1 : $days;
+        $totalPrice = $days * $roomType->price * $request->room_qty;
+
+        $booking = \App\Models\Booking::create([
+            'guest_id' => $guest->id,
+            'check_in' => $request->check_in,
+            'check_out' => $request->check_out,
+            'adults_count' => 1,
+            'children_count' => 0,
+            'room_qty' => $request->room_qty,
+            'total_price' => $totalPrice,
+            'discount_amount' => 0,
+            'status' => $request->payment_status == 'paid' ? 'confirmed' : 'pending',
+        ]);
+
+        $booking->rooms()->attach($rooms->pluck('id'));
+
+        if ($request->payment_status == 'paid') {
+            \App\Models\Payment::create([
+                'booking_id' => $booking->id,
+                'amount' => $totalPrice,
+                'payment_method' => 'cash',
+                'payment_status' => 'paid',
+            ]);
+        }
+
+        return back()->with('success', 'Reservasi manual berhasil dibuat!');
+    }
     public function updateBookingStatus(Request $request, $id) {
         $booking = \App\Models\Booking::with('payments', 'rooms', 'guest')->findOrFail($id);
         $user = Auth::user();

@@ -789,8 +789,14 @@
                 <!-- TAB RESERVASI -->
                 <div class="tab-pane fade" id="tab-bookings">
                     <div class="card-custom">
-                        <div class="px-4 py-3 border-bottom">
-                            <h6 class="fw-bold mb-0 text-dark">Daftar Reservasi Tamu</h6>
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded"><i class="fa-solid fa-calendar-check"></i></div>
+                                Daftar Reservasi Tamu
+                            </h6>
+                            <button class="btn btn-primary fw-semibold d-flex align-items-center gap-2 shadow-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#addManualBookingModal">
+                                <i class="fa-solid fa-user-plus"></i> Reservasi Manual (Walk-in)
+                            </button>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-custom table-hover">
@@ -1145,6 +1151,71 @@
                 <div class="modal-header border-top-0 pt-0 pb-4 px-4">
                     <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
                     <button class="btn btn-success rounded-3 px-4 fw-bold shadow-sm">Simpan Menu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Reservasi Manual -->
+    <div class="modal fade" id="addManualBookingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <form action="/dashboard/booking/manual-store" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+                @csrf
+                <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                    <h5 class="fw-bold"><i class="fa-solid fa-user-plus text-primary me-2"></i>Tambah Reservasi Manual (Walk-in)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-semibold text-muted">Nama Tamu</label>
+                            <input type="text" name="guest_name" class="form-control bg-light rounded-3 border-0 py-2" required placeholder="Nama lengkap tamu">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-semibold text-muted">Email Tamu</label>
+                            <input type="email" name="guest_email" class="form-control bg-light rounded-3 border-0 py-2" required placeholder="email@contoh.com">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-semibold text-muted">Nomor HP / WA</label>
+                            <input type="text" name="guest_phone" class="form-control bg-light rounded-3 border-0 py-2" required placeholder="08xxxxxxxxxx">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-semibold text-muted">Tipe Kamar</label>
+                            <select name="room_type_id" class="form-select bg-light rounded-3 border-0 py-2" required>
+                                <option value="">-- Pilih Tipe Kamar --</option>
+                                @foreach($rooms as $rt)
+                                    <option value="{{ $rt->id }}">{{ $rt->name }} - Rp {{ number_format($rt->price, 0, ',', '.') }} ({{ $rt->location ?? 'Pusat' }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="small fw-semibold text-muted">Tanggal Check-In</label>
+                            <input type="date" name="check_in" class="form-control bg-light rounded-3 border-0 py-2" required min="{{ date('Y-m-d') }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="small fw-semibold text-muted">Tanggal Check-Out</label>
+                            <input type="date" name="check_out" class="form-control bg-light rounded-3 border-0 py-2" required min="{{ date('Y-m-d', strtotime('+1 day')) }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="small fw-semibold text-muted">Jumlah Kamar</label>
+                            <input type="number" name="room_qty" class="form-control bg-light rounded-3 border-0 py-2" required min="1" max="5" value="1">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-semibold text-muted">Status Pembayaran</label>
+                        <select name="payment_status" class="form-select bg-light rounded-3 border-0 py-2" required>
+                            <option value="paid">Lunas (Cash / Transfer Manual)</option>
+                            <option value="pending">Belum Lunas (Bayar Nanti)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-header border-top-0 pt-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
+                    <button class="btn btn-primary rounded-3 px-4 fw-bold shadow-sm w-100 ms-2">Buat Reservasi</button>
                 </div>
             </form>
         </div>
