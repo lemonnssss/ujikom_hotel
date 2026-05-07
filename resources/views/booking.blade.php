@@ -424,6 +424,31 @@
                                 </div>
                             </div>
 
+                            <!-- Payment Method -->
+                            <div class="form-section-title mt-4">
+                                <i class="fa-solid fa-credit-card"></i> Metode Pembayaran
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <div class="d-flex gap-3 flex-wrap">
+                                        <div class="form-check" style="background: #f8f9fc; padding: 12px 20px 12px 40px; border-radius: 10px; border: 2px solid #eef0f5; flex: 1;">
+                                            <input class="form-check-input" type="radio" name="payment_method" id="pay_online" value="online" checked style="margin-top: 6px;">
+                                            <label class="form-check-label fw-bold" for="pay_online">
+                                                Bayar Online (Midtrans)
+                                                <div class="text-muted" style="font-size: 12px; font-weight: normal;">Transfer Bank, E-Wallet, QRIS, Kartu Kredit</div>
+                                            </label>
+                                        </div>
+                                        <div class="form-check" style="background: #f8f9fc; padding: 12px 20px 12px 40px; border-radius: 10px; border: 2px solid #eef0f5; flex: 1;">
+                                            <input class="form-check-input" type="radio" name="payment_method" id="pay_offline" value="offline" style="margin-top: 6px;">
+                                            <label class="form-check-label fw-bold" for="pay_offline">
+                                                Bayar di Tempat (Offline)
+                                                <div class="text-muted" style="font-size: 12px; font-weight: normal;">Bayar langsung saat datang ke resepsionis</div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Price Summary -->
                             <div class="price-summary" id="price-summary">
                                 <div class="summary-label">

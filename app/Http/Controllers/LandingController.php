@@ -160,6 +160,7 @@ class LandingController extends Controller
             'menus' => 'nullable|array',
             'menus.*.qty' => 'nullable|integer|min:0',
             'menus.*.id' => 'nullable|integer|exists:restaurant_menus,id',
+            'payment_method' => 'required|in:online,offline',
         ]);
 
         $roomType = RoomType::findOrFail($id);
@@ -286,6 +287,10 @@ class LandingController extends Controller
             }
         }
 
+        if ($request->payment_method === 'offline') {
+            return redirect()->route('dashboard')->with('success', 'Pemesanan kamar berhasil! Silakan lakukan pembayaran langsung di tempat.');
+        }
+
         return redirect()->route('payment.form', ['type' => 'booking', 'id' => $booking->id])->with('success', 'Pemesanan kamar berhasil disiapkan! Silakan lakukan pembayaran.');
     }
 
@@ -305,6 +310,7 @@ class LandingController extends Controller
             'quantity' => 'required|integer|min:1',
             'room_number' => 'nullable|string',
             'note' => 'nullable|string',
+            'payment_method' => 'required|in:online,offline',
         ]);
 
         $menu = RestaurantMenu::findOrFail($id);
@@ -333,6 +339,10 @@ class LandingController extends Controller
             'quantity' => $request->quantity,
             'price' => $menu->price,
         ]);
+
+        if ($request->payment_method === 'offline') {
+            return redirect()->route('dashboard')->with('success', 'Pesanan restoran berhasil! Silakan bayar di tempat.');
+        }
 
         return redirect()->route('payment.form', ['type' => 'restaurant', 'id' => $order->id])->with('success', 'Pesanan berhasil! Silakan selesaikan pembayaran.');
     }
